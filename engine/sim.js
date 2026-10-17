@@ -28,8 +28,8 @@ function simulate(D){
   function heal(si, amt, src, direct){ const s = S[si]; s.hp = Math.min(s.hpMax, s.hp + amt); if (direct && s.burn > 0) s.burn *= 0.95; if (src >= 0) s.items[src].st.heal += amt; ev({ si, ii:src, kind:"heal", amt }); trigger("heal", { si, src }); }
   function addBurn(target, amt, si, ii){ S[target].burn += amt; if (ii >= 0) S[si].items[ii].st.burn += amt; ev({ si, ii, kind:"burn", amt, on:target }); if (target !== si) trigger("burn", { si, ii }); }
   function chargeItem(si, j, amt, fromIi){ const it = S[si].items[j]; if (!it || !(it.cd > 0)) return; it.charge = Math.min(it.cd, it.charge + amt); it.st.gotCharge += amt; ev({ si, ii:fromIi, kind:"charge", target:j, amt }); }
-  function freezeItem(si, j, amt, fromSi, fromIi){ const it = S[si].items[j]; if (!it) return; if (OV(si, j).immune){ ev({ si:fromSi, ii:fromIi, kind:"blocked", on:si, target:j }); return; } if (it.flying) amt /= 2; it.freezeLeft += amt; it.st.gotFreeze += amt; S[fromSi].items[fromIi].st.freeze = (S[fromSi].items[fromIi].st.freeze||0) + 1; ev({ si:fromSi, ii:fromIi, kind:"freeze", target:j, on:si, amt }); trigger("freeze", { si:fromSi }); }
-  function slowItem(si, j, amt, fromSi, fromIi){ const it = S[si].items[j]; if (!it) return; if (OV(si, j).immune){ ev({ si:fromSi, ii:fromIi, kind:"blocked", on:si, target:j }); return; } if (it.flying) amt /= 2; it.slowLeft += amt; it.st.gotSlow += amt; S[fromSi].items[fromIi].st.slow++; ev({ si:fromSi, ii:fromIi, kind:"slow", target:j, on:si, amt }); trigger("slow", { si:fromSi, ii:fromIi }); }
+  function freezeItem(si, j, amt, fromSi, fromIi){ const it = S[si].items[j]; if (!it) return; if (OV(si, j).immune || it.immune){ ev({ si:fromSi, ii:fromIi, kind:"blocked", on:si, target:j }); return; } if (it.flying) amt /= 2; it.freezeLeft += amt; it.st.gotFreeze += amt; if (fromIi >= 0) S[fromSi].items[fromIi].st.freeze = (S[fromSi].items[fromIi].st.freeze||0) + 1; ev({ si:fromSi, ii:fromIi, kind:"freeze", target:j, on:si, amt }); trigger("freeze", { si:fromSi }); }
+  function slowItem(si, j, amt, fromSi, fromIi){ const it = S[si].items[j]; if (!it) return; if (OV(si, j).immune || it.immune){ ev({ si:fromSi, ii:fromIi, kind:"blocked", on:si, target:j }); return; } if (it.flying) amt /= 2; it.slowLeft += amt; it.st.gotSlow += amt; if (fromIi >= 0) S[fromSi].items[fromIi].st.slow++; ev({ si:fromSi, ii:fromIi, kind:"slow", target:j, on:si, amt }); trigger("slow", { si:fromSi, ii:fromIi }); }
   function gainTempo(si, amt, ii){ const s = S[si]; s.tempo += amt; s.tempoGained += amt; if (ii >= 0) s.items[ii].st.tempo += amt; }
   function spendTempo(si, amt, ii){ const s = S[si]; if (s.tempo < amt - 1e-9) return false; s.tempo -= amt; if (ii >= 0) s.items[ii].st.tempoSpent += amt; ev({ si, ii, kind:"tempo", amt:-amt }); return true; }
   // What if: an item that never gets hasted, or one that always wins the random haste roll (the roll still happens, so later luck stays the same)
@@ -38,8 +38,75 @@ function simulate(D){
   function hasteItem(si, j, amt, fromIi){ const me = S[si], x = me.items[j]; if (OV(si, j).noHaste){ if (fromIi >= 0) me.items[fromIi].st.haste++; ev({ si, ii:fromIi, kind:"blocked", on:si, target:j }); return; } x.hasteLeft += amt; x.st.gotHaste += amt; if (fromIi >= 0) me.items[fromIi].st.haste++; ev({ si, ii:fromIi, kind:"haste", amt, target:j }); if (x.tempoOnHasted) gainTempo(si, x.tempoOnHasted, j); }
   function skillEv(si, k, text){ const sk = S[si].skills[k]; sk.st.triggers++; sk.st.did[text] = (sk.st.did[text]||0) + 1; ev({ si, ii:-1, kind:"skill", skill:k, text }); }
 
+  // Card rules (generated fights): each item's effects and reactions read from its card, enchant and skills.
+  // it.val holds the item's own numbers, it.gain what it gained during the fight, it.fx what it does when used,
+  // it.reacts what it does when something happens. Passive reactions never crit.
+  let depth = 0;
+  const val = (me, it, k) => !it ? 0 : k === "crit" ? (it.crit || 0) + me.critBonus + it.critAdd :
+    ((it.val && it.val[k]) || 0) + ((it.gain && it.gain[k]) || 0) + (k === "burn" && it.val && it.val.burn ? me.burnBonus : 0);
+  function pickN(pool, n){ const p = pool.slice(), out = []; for (let q = 0; q < n && p.length; q++) out.push(p.splice(Math.floor(rnd()*p.length), 1)[0]); return out; }
+  function targets(me, ii, f){
+    const w = f.who || "random", n = f.n || 1, cdOnly = f.kind === "haste" || f.kind === "charge", ok = j => me.items[j] && (!cdOnly || me.items[j].cd > 0);
+    const all = me.items.map((x, j) => j).filter(ok);
+    if (w === "self") return ii >= 0 && ok(ii) ? [ii] : [];
+    if (w === "adj") return [ii - 1, ii + 1].filter(ok);
+    if (w === "left") return [ii - 1].filter(ok);
+    if (w === "right") return [ii + 1].filter(ok);
+    if (w === "all") return all;
+    if (w === "allOther") return all.filter(j => j !== ii);
+    if (w === "flyOthers") return all.filter(j => j !== ii && me.items[j].flying);
+    if (w === "tag") return f.n ? pickN(all.filter(j => j !== ii && me.items[j].tags.includes(f.tag)), n) : all.filter(j => me.items[j].tags.includes(f.tag));
+    if (w === "has") return pickN(all.filter(j => val(me, me.items[j], f.has) > 0 || (me.items[j].val && me.items[j].val[f.has])), n);
+    if (w === "size") return f.n ? pickN(all.filter(j => j !== ii && me.items[j].size === f.size), n) : all.filter(j => me.items[j].size === f.size);
+    return pickN(all.filter(j => j !== ii), n);
+  }
+  function doEff(si, ii, f, m){
+    if (depth > 40) return; depth++;
+    const me = S[si], foe = 1 - si, it = ii >= 0 ? me.items[ii] : null;
+    let a = f.of ? val(me, it, f.of) * f.f : f.own ? val(me, it, f.kind) : (f.amt || 0);
+    const k = f.kind;
+    // Scale fitted so the item's totals match BazaarHub's recap (see fitGen)
+    a = Math.round(a * m * ((it && it.scale && it.scale[k]) || 1) * 10) / 10;
+    if (k === "dmg" && a > 0){ hit(foe, a, "dmg"); if (it) it.st.dmg += a; ev({ si, ii, kind:"dmg", amt:a, crit:m > 1, anim:it && it.anim }); if (it && it.lifesteal) heal(si, a*it.lifesteal/100, ii); }
+    else if (k === "burn" && a > 0){ addBurn(foe, a, si, ii); if (ii >= 0) ev({ si, ii, kind:"fire" }); }
+    else if (k === "poison" && a > 0){ S[foe].poison += a; if (it) it.st.poison += a; ev({ si, ii, kind:"poison", amt:a, on:foe }); trigger("poison", { si, ii }); }
+    else if (k === "shield" && a > 0){ me.shield += a; if (it) it.st.shield += a; ev({ si, ii, kind:"shield", amt:a }); trigger("shield", { si, ii }); }
+    else if (k === "heal" && a > 0){ heal(si, a, ii, true); }
+    else if (k === "regen" && a > 0){ me.regen += a; if (it) it.st.regen += a; ev({ si, ii, kind:"regen", amt:a }); trigger("regen", { si, ii }); }
+    else if (k === "slow" || k === "freeze"){ const mul = (it && it[k + "Mul"]) || 1; pickN(S[foe].cdItems, f.n || 1).forEach(j => (k === "slow" ? slowItem : freezeItem)(foe, j, f.secs * mul, si, ii)); }
+    else if (k === "haste"){ const pool = me.cdItems.filter(j => j !== ii), tg = (f.who || "random") !== "random" ? targets(me, ii, f) : (f.n || 1) === 1 ? [pickHaste(si, pool)].filter(j => j >= 0) : pickN(pool, f.n).filter(j => !OV(si, j).missRandHaste); const mul = (it && it.hasteMul) || 1;
+      tg.forEach(j => hasteItem(si, j, f.secs * mul, ii)); if (tg.length) trigger("haste", { si, ii }); }
+    else if (k === "charge"){ const mul = (it && it.chargeMul) || 1; targets(me, ii, f).forEach(j => chargeItem(si, j, f.secs * mul, ii)); }
+    else if (k === "gain"){
+      if (f.who === "side"){ if (f.stat === "crit") me.critBonus += f.amt; }
+      else targets(me, ii, { ...f, kind:"gain" }).forEach(j => { const x = me.items[j]; if (f.stat === "crit") x.critAdd += f.amt; else { x.gain = x.gain || {}; x.gain[f.stat] = (x.gain[f.stat] || 0) + f.amt; if (f.stat === "dmg") x.dmgBonus += f.amt; } });
+      if (it){ it.st.gains = (it.st.gains || 0) + 1; }
+    }
+    else if (k === "fly"){ targets(me, ii, f).forEach(j => { me.items[j].flying = true; }); }
+    depth--;
+  }
+  function reactOK(r, type, e, me, owner){
+    const on = r.on === "enemyUse" ? "use" : r.on;
+    if (on !== type) return false;
+    if (r.on === "enemyUse" ? e.si === me.si : e.si !== me.si) return false;
+    const src = e.ii !== undefined && e.ii >= 0 ? (r.on === "enemyUse" ? S[e.si] : me).items[e.ii] : null;
+    if (r.adj && !(owner >= 0 && src && Math.abs(e.ii - owner) === 1)) return false;
+    if (r.notSelf && e.ii === owner) return false;
+    if (r.flying && !(src && src.flying)) return false;
+    if (r.tag && !(src && r.tag.some(g => src.tags.includes(g)))) return false;
+    if (r.size && !(src && src.size === r.size)) return false;
+    return true;
+  }
+  function runReacts(type, e){
+    S.forEach(me => {
+      me.items.forEach(it => { if (!it.reacts) return; it.reacts.forEach((r, q) => { if (!reactOK(r, type, e, me, it.ii)) return; it.rc = it.rc || {}; if (r.once && it.rc[q]) return; it.rc[q] = (it.rc[q] || 0) + 1; it.st.react = (it.st.react || 0) + 1; ev({ si:me.si, ii:it.ii, kind:"fire" }); r.eff.forEach(f => doEff(me.si, it.ii, f, 1)); }); });
+      me.skills.forEach((sk, k) => { if (!sk.reacts || (D.skillOff && D.skillOff[me.si + "_" + k])) return; sk.rc = sk.rc || {}; sk.reacts.forEach((r, q) => { if (!reactOK(r, type, e, me, -1)) return; if (r.once && sk.rc[q]) return; sk.rc[q] = (sk.rc[q] || 0) + 1; r.eff.forEach(f => doEff(me.si, -1, f, 1)); skillEv(me.si, k, r.say || sk.name); }); });
+    });
+  }
+
   // Event triggers: items and skills listening to what happens in the fight
   function trigger(type, e){
+    runReacts(type, e);
     S.forEach(me => {
       const foe = S[1 - me.si];
       me.items.forEach(it => {
@@ -102,6 +169,11 @@ function simulate(D){
     const ov = OV(si, ii), roll = it.crit !== undefined ? rnd()*100 : 0;
     const crit = it.crit !== undefined && (ov.crit === "always" ? true : ov.crit === "never" ? false : roll < (ov.critPct !== undefined ? ov.critPct : it.crit) + me.critBonus + it.critAdd);
     const m = crit ? 2 : 1;
+    if (it.rules){
+      (it.fx || []).forEach(f => doEff(si, ii, f, f.noCrit ? 1 : m));
+      if (it.crit !== undefined && !ov.crit) ev({ si, ii, kind:"roll", crit, p:Math.min(100,(ov.critPct !== undefined ? ov.critPct : it.crit) + me.critBonus + it.critAdd) }); if (crit){ it.st.crit++; me.crits++; trigger("crit", { si, ii }); }
+      return;
+    }
     if (it.valueGain){ it.shieldNow += 2*it.valueGain; }
     if (it.dmg){
       const d = (it.dmg + it.dmgBonus) * m; hit(foe, d, "dmg"); it.st.dmg += d;
@@ -144,6 +216,7 @@ function simulate(D){
     it.st.uses++;
     ev({ si, ii, kind:"use" });
     cast(si, ii, 0);
+    (it.nth || []).forEach(r => { if (it.st.uses % r.n === 0) r.eff.forEach(f => doEff(si, ii, f, 1)); });
     const mc = (it.multicast || 1) + (it.mcPerTempo ? Math.floor(me.tempoGained / it.mcPerTempo) : 0);
     for (let k = 1; k < mc; k++) queue.push({ at:R(t + k*D.castGap), si, ii, k });
     trigger("use", { si, ii });
@@ -151,9 +224,10 @@ function simulate(D){
   }
   function snap(){
     frames.push(S.map(s => ({ hp:Math.max(0, s.hp), sh:s.shield, burn:s.burn, poison:s.poison, regen:s.regen, tempo:s.tempo,
-      items: s.items.map(it => ({ cd: it.cd, c: it.cd > 0 ? Math.min(1, it.charge/it.cd) : 0, h: it.hasteLeft > 0, hl: it.hasteLeft, sl: it.slowLeft > 0, fr: it.freezeLeft > 0, d: it.dmg ? it.dmg + it.dmgBonus : null })) })));
+      items: s.items.map(it => ({ cd: it.cd, c: it.cd > 0 ? Math.min(1, it.charge/it.cd) : 0, h: it.hasteLeft > 0, hl: it.hasteLeft, sl: it.slowLeft > 0, fr: it.freezeLeft > 0, d: it.rules ? (it.val && it.val.dmg ? Math.round((it.val.dmg + it.dmgBonus) * ((it.scale && it.scale.dmg) || 1)) : null) : it.dmg ? it.dmg + it.dmgBonus : null })) })));
   }
   S.forEach((s, si) => s.items.forEach((it, ii) => { const f = OV(si, ii).startFreeze; if (f){ it.freezeLeft = f; it.st.gotFreeze += f; } }));
+  S.forEach((s, si) => s.items.forEach((it, ii) => (it.atStart || []).forEach(f => doEff(si, ii, f, 1))));
   snap();
   while (t < D.maxT && !end){
     step++; t = R(step*dt);

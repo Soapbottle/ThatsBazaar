@@ -99,6 +99,12 @@ button{font:inherit;font-weight:600;color:var(--fg);background:var(--panel-2);bo
 button:hover{border-color:var(--accent)}
 button:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.primary{background:linear-gradient(180deg,#f6bd5a,#d68a22);color:#2a1505;border-color:#f6bd5a;min-width:84px}
+.days{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.days:empty{display:none}
+.days button{padding:6px 10px;font-family:var(--mono);font-size:12.5px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:92px}
+.days button small{font-size:11px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.days button .w{color:var(--good,#7fd07f)}.days button .l{color:var(--bad,#e2665a)}
+.days button[aria-pressed="true"]{background:var(--panel-2);border-color:var(--accent);color:var(--accent)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:0;border-radius:0;padding:7px 10px;background:transparent;font-family:var(--mono);font-size:12.5px}
 .seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--accent)}
@@ -222,16 +228,16 @@ td.num{font-family:var(--mono)}
         <button class="primary" type="submit">Open</button>
       </form>
       <div class="note-t" id="find-msg" hidden></div>
-      <button id="paste-open" type="button">Paste a fight</button>
+      <button id="paste-open" type="button" hidden>Paste a fight</button>
       <div id="paste" class="paste" hidden>
         <div class="note-t">On a BazaarHub run page, open the day you want, click your Board Reader bookmarklet, press Copy, and paste it here. Every fight of that day gets built, with the odds worked out on the spot.</div>
         <textarea id="paste-text" rows="8" placeholder="=== Hour 6 · ... ===" aria-label="Board Reader copy"></textarea>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="primary" id="paste-build" type="button">Build</button><span class="note-t" id="paste-msg"></span></div>
       </div>
-      <div class="seg" role="group" aria-label="Pick a fight" id="fights"></div>
       <a class="runlink" id="runlink" target="_blank" rel="noopener">Open the run on BazaarHub ↗</a>
     </div>
   </header>
+  <nav class="days" aria-label="Pick a day" id="fights"></nav>
 
   <section class="panel" id="odds" aria-label="Your odds in this fight"></section>
 
@@ -302,8 +308,23 @@ let SIM, simT = 0, playing = false, speed = 1, lastWall = 0;
 let VIEW = DATA;
 
 
+// Every effect a card-rule item has: what it does on use, its reactions, and every Nth use
+const ruleFx = it => [...(it.fx || []), ...(it.atStart || []), ...(it.reacts || []).flatMap(r => r.eff), ...(it.nth || []).flatMap(r => r.eff)];
 function badges(it){
   const b = [];
+  if (it.rules){
+    const v = it.val || {}, fx = ruleFx(it), sc = k => (it.scale && it.scale[k]) || 1, num = k => v[k] !== undefined ? Math.round(v[k] * sc(k)) : null;
+    if (num("dmg")) b.push(`<span class="badge b-dmg" data-dmg>${fmt(num("dmg"))}</span>`);
+    if (num("burn")) b.push(`<span class="badge b-burn">${num("burn")}</span>`);
+    if (num("poison")) b.push(`<span class="badge b-poi">${num("poison")}</span>`);
+    if (num("heal")) b.push(`<span class="badge b-rg">+${num("heal")}</span>`);
+    if (num("shield")) b.push(`<span class="badge b-sh">${num("shield")}</span>`);
+    if (num("regen")) b.push(`<span class="badge b-rg">${num("regen")}</span>`);
+    const h = fx.find(f => f.kind === "haste"); if (h) b.push(`<span class="badge b-hst">${h.secs * (it.hasteMul || 1)}s</span>`);
+    const sl = fx.find(f => f.kind === "slow" || f.kind === "freeze"); if (sl) b.push(`<span class="badge b-st">${sl.secs * (it[sl.kind + "Mul"] || 1)}s</span>`);
+    if (it.crit) b.push(`<span class="badge b-cr">${it.crit}%</span>`);
+    return b.join("");
+  }
   if (it.dmg) b.push(`<span class="badge b-dmg" data-dmg>${fmt(it.dmg)}</span>`);
   if (it.onEnemyFastest) b.push(`<span class="badge b-dmg">${it.onEnemyFastest.dmg}</span>`);
   if (it.burn || it.burnBoth) b.push(`<span class="badge b-burn">${it.burn || it.burnBoth}</span>`);
@@ -654,9 +675,9 @@ const ACTIVE_SKILL = sk => sk.kind !== "static" && sk.kind !== "none";
 // Skills whose effect has a random part (random target or a crit-based trigger): the only ones the What if panel can switch off
 const RANDOM_SKILL = sk => ["flurry", "stun", "trained"].includes(sk.kind);
 // Can this side slow or freeze anything? If not, the other side's slow and freeze options are left out.
-const HASTES = p => p.items.some(it => it.haste);
-const RAND_HASTE = p => p.items.some(it => it.haste && (it.haste.mode === "random" || it.haste.mode === "friendAndOther"));
-const CONTROLS = p => p.items.some(it => it.slowOnRightCrit || it.slowAct || it.freezeAct) || (p.skills||[]).some(sk => sk.kind === "stun");
+const HASTES = p => p.items.some(it => it.haste || ruleFx(it).some(f => f.kind === "haste")) || (p.skills||[]).some(sk => (sk.reacts||[]).some(r => r.eff.some(f => f.kind === "haste")));
+const RAND_HASTE = p => p.items.some(it => (it.haste && (it.haste.mode === "random" || it.haste.mode === "friendAndOther")) || ruleFx(it).some(f => f.kind === "haste" && (!f.who || f.who === "random" || f.who === "tag" || f.who === "has")));
+const CONTROLS = p => p.items.some(it => it.slowOnRightCrit || it.slowAct || it.freezeAct || ruleFx(it).some(f => f.kind === "slow" || f.kind === "freeze")) || (p.skills||[]).some(sk => (sk.reacts||[]).some(r => r.eff.some(f => f.kind === "slow" || f.kind === "freeze"))) || (p.skills||[]).some(sk => sk.kind === "stun");
 function wiData(extra){
   const D = structuredClone(DATA);
   D.ov = structuredClone(WI.ov); D.skillOff = { ...WI.skillOff }; D.stunAt = { ...WI.stunAt };
@@ -805,7 +826,7 @@ function renderOdds(){
     ${est ? `<div class="note-t"><b>Health numbers aren't on BazaarHub yet.</b> ${opp.name}'s health is estimated at ${fmt(opp.hp)}${BASE.hpNote ? ", " + BASE.hpNote : ""}. If he had more:</div>
     <div class="ladder">${S.ladder.map(l => `<span class="${l.hp === opp.hp ? "cur" : ""}">${fmt(l.hp)} health: ${pc(l.win)} win</span>`).join("")}</div>` : ""}
     <div class="sub">${lost ? "What would have turned it into a win" : "What could have cost you the win"}</div>
-    <div class="note-t">${lost
+    <div class="note-t">${!S.of ? `None of the replays ended the way your real fight did, so the odds above are rough. The opponent's health or one of the item numbers is probably off.` : lost
       ? `In the ${S.of} replays closest to your real fight, ${opp.name} had about ${fmt(S.margin.med)} health left when you went down (${fmt(S.margin.min)} to ${fmt(S.margin.max)}). Each row changes one thing in those same fights and counts how many you'd win.`
       : `In the ${S.of} replays closest to your real fight, you had about ${fmt(S.margin.med)} health left when ${opp.name} went down. Each row changes one thing in those same fights and counts how many you'd lose.`}</div>
     ${flips}${luckHTML(S)}`;
@@ -833,7 +854,7 @@ function onStunPick(sel){
 document.addEventListener("change", e => { const sel = e.target.closest && e.target.closest("[data-stunpick]"); if (sel) onStunPick(sel); });
 // Who got lucky in the real fight, shown when the real result was the unlikely one
 function luckHTML(S){
-  const L = S.luck; if (!L || !L.upset) return "";
+  const L = S.luck; if (!L || !L.upset || !S.of) return "";
   const lost = BASE.winner === 1, me = L.sides[0], op = L.sides[1], pc = v => Math.round(v*100) + "%", one = p => "1 in " + fmt(Math.round(1/p));
   const realP = lost ? S.win : 1 - S.win;
   const freezeLine = (f, mine) => {
@@ -894,7 +915,7 @@ function loadFight(i){
   BASE = FIGHTS[i]; DATA = structuredClone(BASE); VIEW = DATA; FIT = null;
   WI.ov = {}; WI.skillOff = {}; WI.stunAt = {}; WI.hp = null;
   $("blurb").textContent = BASE.gen
-    ? "Built from your Board Reader paste. Each item uses its real per-use averages from the recap, its cooldown is fitted so it gets its real number of uses, and its haste, slow and freeze targets are random like in the game."
+    ? "Built from your BazaarHub run. Every item runs from its card text, its enchant and your skills, so Bass gains damage on each slow and Flame Skirt burns when its neighbours slow. Each item's numbers are then scaled so its totals match BazaarHub's recap, and cooldowns are fitted so it gets its real number of uses."
     : "Your run replayed from the exact item stats your tracker recorded, every item's active and passive effects, and your skills. Totals are checked against the fight recap on BazaarHub.";
   $("title").textContent = BASE.title; $("eyebrow").textContent = BASE.eyebrow; $("runlink").href = BASE.runUrl;
   drawFightTabs();
@@ -932,13 +953,17 @@ $("find").addEventListener("submit", async e => {
 });
 // Tabs show every fight of the open run's day, by hour
 function drawFightTabs(){
-  const day = FIGHTS.map((f, i) => ({ f, i })).filter(x => x.f.run === BASE.run && x.f.day === BASE.day).sort((a, b) => (a.f.hour||0) - (b.f.hour||0));
-  $("fights").innerHTML = day.map(({ f, i }) => `<button data-i="${i}" aria-pressed="${f === BASE}">${f.hour ? "Hour " + f.hour + " · " : ""}${f.winner === 0 ? "Win" : "Loss"} vs ${f.sides[1].name}</button>`).join("");
+  // Every fight of the loaded run, by day then hour
+  const all = FIGHTS.map((f, i) => ({ f, i })).filter(x => x.f.run === BASE.run).sort((a, b) => (a.f.day||0) - (b.f.day||0) || (a.f.hour||0) - (b.f.hour||0));
+  const perDay = {}; all.forEach(({ f }) => { perDay[f.day] = (perDay[f.day] || 0) + 1; });
+  $("fights").innerHTML = all.length < 2 ? "" : all.map(({ f, i }) => `<button data-i="${i}" aria-pressed="${f === BASE}"><span>Day ${f.day}${perDay[f.day] > 1 && f.hour ? " · H" + f.hour : ""} <b class="${f.winner === 0 ? "w" : "l"}">${f.winner === 0 ? "W" : "L"}</b></span><small>${f.sides[1].name}</small></button>`).join("");
 }
 drawFightTabs();
 $("fights").addEventListener("click", e => { const b = e.target.closest("button"); if (b) openFight(+b.dataset.i); });
 // Fights from a paste need a moment for their odds, so show that before the page freezes for it
 function openFight(i){
+  // Fights from the bookmark are built only when first opened
+  if (FIGHTS[i].pending){ const msg = $("find-msg"); msg.hidden = false; msg.textContent = `Building day ${FIGHTS[i].day}…`; return setTimeout(() => { const P = FIGHTS[i].pending, F = genFight(P); F.key += "-" + P.hour; F.hour = P.hour; FIGHTS[i] = F; msg.hidden = true; openFight(i); }, 30); }
   if (SUMMARY[FIGHTS[i].key]) return loadFight(i);
   const msg = $("find-msg"); msg.hidden = false; msg.textContent = `Working out the odds for ${FIGHTS[i].label}…`;
   setTimeout(() => { loadFight(i); msg.hidden = true; }, 30);
@@ -958,13 +983,14 @@ $("paste-build").onclick = () => {
     let first = -1;
     parsed.forEach(P => {
       P.day = P.day || day;
-      const F = genFight(P), old = FIGHTS.findIndex(x => x.key === F.key + "-" + P.hour);
-      F.key += "-" + P.hour; F.hour = P.hour;
-      delete SUMMARY[F.key];
+      const key = "gen-" + P.run + "-" + P.day + "-" + P.hour, old = FIGHTS.findIndex(x => x.key === key);
+      // Keep only what the day buttons need until the fight is opened
+      const F = { key, run: P.run, day: P.day, hour: P.hour, winner: P.winner, sides: P.sides, label: `day ${P.day}`, pending: P };
+      delete SUMMARY[key];
       if (old >= 0) FIGHTS[old] = F; else FIGHTS.push(F);
       const at = old >= 0 ? old : FIGHTS.length - 1;
-      // Open the day's PvP fight: the one against a hero
-      if (first < 0 || P.sides[1].hero) first = at;
+      // Open the day the bookmark was clicked on, on its PvP fight (the one against a hero)
+      if (first < 0 || (P.day === day && (FIGHTS[first].day !== day || P.sides[1].hero))) first = at;
     });
     $("paste").hidden = true; msg.textContent = "";
     openFight(first);
