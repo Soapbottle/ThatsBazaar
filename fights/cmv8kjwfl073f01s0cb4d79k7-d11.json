@@ -1,0 +1,722 @@
+{
+ "order": 0,
+ "fight": {
+  "key": "dr11",
+  "run": "cmv8kjwfl073f01s0cb4d79k7",
+  "day": 11,
+  "label": "Dragons day 11 loss vs Cloverino",
+  "hpNote": "about a level 13 hero's base. Globe in his stash adds health every day, but in this fight your odds barely move with it",
+  "notes": "Cloverino's health, item tiers and skills aren't shown on BazaarHub. Each of his items uses its real average damage per use from the recap, with crits split out (Deadly Crook gives his items +50% crit chance), and its cooldown is set so it gets its real number of uses before you fall. His health is set to 6,000, about a level 13 hero's base. Globe in his stash adds max health every day, so he probably had more, but your odds barely change with his health in this fight.",
+  "dt": 0.05,
+  "maxT": 75,
+  "castGap": 0.25,
+  "sandstormAt": 45,
+  "seed": 5,
+  "title": "SoapBottle vs Cloverino",
+  "eyebrow": "Dragons run · Day 11 · Hour 6 · Ranked · Patch 19.0 · Final fight, 5 wins 6 losses",
+  "runUrl": "https://bazaarhub.gg/runs/cmv8kjwfl073f01s0cb4d79k7",
+  "winner": 1,
+  "sides": [
+   {
+    "name": "SoapBottle",
+    "hero": "The Dragons · Level 13",
+    "heroKey": "dragons",
+    "hp": 6072,
+    "hpSrc": "track",
+    "tempoPerSec": 1,
+    "items": [
+     {
+      "slug": "megaphone",
+      "name": "Megaphone",
+      "tier": "Silver",
+      "size": 1,
+      "tags": [
+       "Tool"
+      ],
+      "cd": 5,
+      "cdSrc": "track",
+      "haste": {
+       "amt": 2,
+       "mode": "friendAndOther"
+      },
+      "anim": "haste",
+      "real": {
+       "haste": 4,
+       "uses": 2
+      },
+      "text": [
+       [
+        "Active: Haste a Friend 2 seconds",
+        "yes",
+        "Turner is your only Friend."
+       ],
+       [
+        "Active: Haste a non-Friend item 2 seconds",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "turner",
+      "name": "Turner",
+      "tier": "Gold",
+      "size": 2,
+      "tags": [
+       "Friend",
+       "Drone",
+       "Instrument",
+       "Tech"
+      ],
+      "cd": 4,
+      "cdSrc": "track",
+      "haste": {
+       "amt": 2,
+       "mode": "self"
+      },
+      "tempoOnHasted": 3,
+      "anim": "haste",
+      "real": {
+       "haste": 5,
+       "uses": 5,
+       "tempo": 30
+      },
+      "text": [
+       [
+        "Active: Haste this 2 seconds",
+        "yes",
+        ""
+       ],
+       [
+        "Passive: When you Haste this, gain 3 Tempo",
+        "yes",
+        "Counts its own haste, Megaphone's and Amp's."
+       ]
+      ]
+     },
+     {
+      "slug": "amp",
+      "name": "Amp",
+      "tier": "Diamond",
+      "size": 2,
+      "tags": [
+       "Tech",
+       "Tool"
+      ],
+      "cd": 5.399,
+      "cdSrc": "track",
+      "haste": {
+       "amt": 3,
+       "mode": "adjacent"
+      },
+      "tempoDoubleRight": 4,
+      "anim": "haste",
+      "real": {
+       "haste": 6,
+       "uses": 3,
+       "tempoSpent": 4
+      },
+      "text": [
+       [
+        "Active: Haste adjacent items 3 seconds",
+        "yes",
+        "Turner and Death Metal Drum Kit."
+       ],
+       [
+        "Active: Spend 4 Tempo: double the damage of the item to the right",
+        "yes",
+        "Doubles Drum Kit's damage for the rest of the fight, if you have 4 Tempo when Amp fires."
+       ]
+      ]
+     },
+     {
+      "slug": "death-metal-drum-kit",
+      "name": "Death Metal Drum Kit",
+      "ench": "Shielded",
+      "tier": "Diamond",
+      "size": 3,
+      "tags": [
+       "Weapon",
+       "Instrument"
+      ],
+      "cd": 5.399,
+      "cdSrc": "track",
+      "dmg": 182,
+      "dmgSrc": "track",
+      "crit": 20,
+      "critSrc": "track",
+      "burnPctDmg": 0.1,
+      "burnFlat": 2,
+      "burnSrc": "track",
+      "shieldFromDmg": true,
+      "tempoRecast": 4,
+      "anim": "dmg",
+      "real": {
+       "dmg": 4789,
+       "burn": 647,
+       "shield": 4789,
+       "uses": 11,
+       "tempoSpent": 32
+      },
+      "text": [
+       [
+        "Active: Deal 182 Damage",
+        "yes",
+        ""
+       ],
+       [
+        "Active: Burn equal to 10% of this item's Damage",
+        "yes",
+        "20 at the start (with Heat Shield); grows when its damage grows."
+       ],
+       [
+        "Passive: When you use this, spend 4 Tempo to use it again",
+        "yes",
+        "Keeps going while you have Tempo."
+       ],
+       [
+        "Shielded: Shield equal to this item's Damage",
+        "yes",
+        "The recap's shield matches its damage exactly."
+       ]
+      ]
+     },
+     {
+      "slug": "ignitar",
+      "name": "Ignitar",
+      "ench": "Restorative",
+      "tier": "Diamond",
+      "size": 2,
+      "tags": [
+       "Instrument"
+      ],
+      "cd": 4.95,
+      "cdSrc": "track",
+      "burn": 20,
+      "burnSrc": "track",
+      "crit": 15,
+      "critSrc": "track",
+      "healFromBurn": 5,
+      "mcPerTempo": 10,
+      "anim": "nitro",
+      "real": {
+       "burn": 184,
+       "heal": 920,
+       "casts": 4
+      },
+      "text": [
+       [
+        "Active: Burn 20",
+        "yes",
+        ""
+       ],
+       [
+        "Passive: For each 10 Tempo you gain, this has +1 Multicast",
+        "yes",
+        "Counts all Tempo gained this fight, including 1 a second."
+       ],
+       [
+        "Restorative: Heal equal to 5 times this item's Burn",
+        "yes",
+        "The recap's 920 heal is exactly 5 × its 184 burn."
+       ]
+      ]
+     }
+    ],
+    "skills": [
+     {
+      "slug": "sharpened-steel",
+      "name": "Sharpened Steel",
+      "tier": "Diamond",
+      "kind": "sharpened",
+      "amt": 12,
+      "text": "When you use a Weapon, adjacent items gain 12% Crit Chance",
+      "m": "yes",
+      "why": "Every Drum Kit use gives Amp and Ignitar +12%."
+     },
+     {
+      "slug": "conflagration",
+      "name": "Conflagration",
+      "tier": "Gold",
+      "kind": "conflag",
+      "amt": 2,
+      "text": "When you use an item with Burn, that item gains 2 Burn",
+      "m": "yes"
+     },
+     {
+      "slug": "heat-lover",
+      "name": "Heat Lover",
+      "tier": "Gold",
+      "kind": "heatlover",
+      "amt": 2,
+      "text": "When you Burn, Regen 2",
+      "m": "yes"
+     },
+     {
+      "slug": "first-flames",
+      "name": "First Flames",
+      "tier": "Silver",
+      "kind": "firstflames",
+      "amt": 40,
+      "text": "The first time you use a Large item, Burn 40",
+      "m": "yes",
+      "why": "Drum Kit is your Large item."
+     },
+     {
+      "slug": "plowshares-to-swords",
+      "name": "Plowshares to Swords",
+      "tier": "Silver",
+      "kind": "plowshares",
+      "amt": 6,
+      "text": "When you use a Tool, Weapons adjacent to it gain 6 Damage",
+      "m": "yes",
+      "why": "Amp is a Tool next to Drum Kit."
+     },
+     {
+      "slug": "precision-tools",
+      "name": "Precision Tools",
+      "tier": "Silver",
+      "kind": "none",
+      "text": "When you Haste or Slow a Tool, it gains 10 Damage",
+      "m": "n/a",
+      "why": "Your Tools (Megaphone, Amp) deal no damage."
+     },
+     {
+      "slug": "critical-sound",
+      "name": "Critical Sound",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "Your Instruments have +10% Crit Chance",
+      "m": "yes",
+      "why": "Already in the tracker crit chance."
+     },
+     {
+      "slug": "heat-shield",
+      "name": "Heat Shield",
+      "tier": "Silver",
+      "kind": "static",
+      "text": "Your items have +3 Burn for each Shield item you have",
+      "m": "yes",
+      "why": "Already in the tracker burn."
+     },
+     {
+      "slug": "library-arsonist",
+      "name": "Library Arsonist",
+      "tier": "Legendary",
+      "kind": "none",
+      "text": "You started the fire",
+      "m": "n/a",
+      "why": "No fight effect."
+     },
+     {
+      "slug": "scavenger",
+      "name": "Scavenger",
+      "tier": "Silver",
+      "kind": "none",
+      "text": "When you Level Up, get a small item from another Hero",
+      "m": "n/a",
+      "why": "Shop only."
+     }
+    ]
+   },
+   {
+    "name": "Cloverino",
+    "hero": "Pygmalien · Level 13",
+    "heroKey": "pygmalien",
+    "hp": 6000,
+    "hpSrc": "est",
+    "items": [
+     {
+      "slug": "jabalian-totem",
+      "name": "Jabalian Totem",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 2,
+      "tags": [
+       "Relic",
+       "Weapon"
+      ],
+      "cd": 2.6,
+      "cdSrc": "est",
+      "dmg": 449,
+      "dmgSrc": "run",
+      "shield": 469,
+      "shieldSrc": "run",
+      "crit": 50,
+      "critSrc": "est",
+      "anim": "dmg",
+      "real": {
+       "dmg": 3370,
+       "shield": 3520,
+       "uses": 5
+      },
+      "text": [
+       [
+        "Active: Deal Damage for each Type this has",
+        "partial",
+        "Uses the real average, 674 a use, as 449 plus crits."
+       ],
+       [
+        "Shield (from a skill or bonus we can't see)",
+        "partial",
+        "Real average, 704 a use."
+       ]
+      ]
+     },
+     {
+      "slug": "lumboars",
+      "name": "Lumboars",
+      "ench": "Turbo",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 2,
+      "tags": [
+       "Weapon",
+       "Aquatic"
+      ],
+      "cd": 3.4,
+      "cdSrc": "est",
+      "dmg": 238,
+      "dmgSrc": "run",
+      "crit": 50,
+      "critSrc": "est",
+      "haste": {
+       "amt": 1,
+       "mode": "random",
+       "n": 2
+      },
+      "anim": "dmg",
+      "real": {
+       "dmg": 1426,
+       "haste": 8,
+       "uses": 4
+      },
+      "text": [
+       [
+        "Active: Deal 10 Damage",
+        "partial",
+        "Real average, 356 a use, as 238 plus crits."
+       ],
+       [
+        "Active: Your items gain Damage",
+        "partial",
+        "Folded into every item's real average."
+       ],
+       [
+        "Turbo: Haste 2 items 1 second",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "caltrops",
+      "name": "Caltrops",
+      "tier": "Diamond",
+      "size": 2,
+      "tags": [
+       "Weapon",
+       "Trap"
+      ],
+      "cd": 0,
+      "onEnemyUseDmg": 166,
+      "dmgSrc": "run",
+      "anim": "dmg",
+      "real": {
+       "dmg": 3828
+      },
+      "text": [
+       [
+        "Passive: When an enemy uses an item, deal Damage",
+        "partial",
+        "Every item use of yours triggers it, including each Drum Kit reuse. Passive, so it never crits: 3,828 over your 23 uses is 166 a hit."
+       ]
+      ]
+     },
+     {
+      "slug": "flail",
+      "name": "Flail",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 2,
+      "tags": [
+       "Weapon"
+      ],
+      "cd": 2.2,
+      "cdSrc": "est",
+      "dmg": 327,
+      "dmgSrc": "run",
+      "crit": 50,
+      "critSrc": "est",
+      "anim": "dmg",
+      "real": {
+       "dmg": 2940,
+       "uses": 6
+      },
+      "text": [
+       [
+        "Active: Deal Damage",
+        "partial",
+        "Real average, 490 a use, as 327 plus crits. Its cooldown is set to fit 6 uses."
+       ]
+      ]
+     },
+     {
+      "slug": "crook",
+      "name": "Crook",
+      "ench": "Deadly",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 2,
+      "tags": [
+       "Tool",
+       "Weapon"
+      ],
+      "cd": 6.5,
+      "cdSrc": "est",
+      "dmg": 261,
+      "dmgSrc": "run",
+      "crit": 50,
+      "critSrc": "est",
+      "anim": "dmg",
+      "real": {
+       "dmg": 782,
+       "uses": 2
+      },
+      "text": [
+       [
+        "Active: Deal Damage",
+        "partial",
+        "Real average, 391 a use."
+       ],
+       [
+        "Passive: Your Medium items have more Damage for each Medium item",
+        "partial",
+        "Folded into every item's real average."
+       ],
+       [
+        "Deadly: Your items have +10% Crit Chance for each Medium item",
+        "yes",
+        "5 Medium items, so +50% on all his items."
+       ]
+      ]
+     }
+    ],
+    "skills": []
+   }
+  ]
+ },
+ "summary": {
+  "luck": {
+   "upset": false,
+   "sides": [
+    {
+     "name": "SoapBottle",
+     "act": 4,
+     "exp": 4.6,
+     "items": [
+      {
+       "ii": 3,
+       "name": "Shielded Death Metal Drum Kit",
+       "n": 9,
+       "act": 1,
+       "exp": 1.8,
+       "weight": 0.84,
+       "streak": null,
+       "longShots": [
+        {
+         "p": 20,
+         "t": 5.5
+        }
+       ]
+      },
+      {
+       "ii": 4,
+       "name": "Restorative Ignitar",
+       "n": 4,
+       "act": 3,
+       "exp": 2.8,
+       "weight": 0.11,
+       "streak": null,
+       "longShots": []
+      }
+     ],
+     "freeze": null
+    },
+    {
+     "name": "Cloverino",
+     "act": 7,
+     "exp": 9,
+     "items": [
+      {
+       "ii": 0,
+       "name": "Jabalian Totem",
+       "n": 5,
+       "act": 3,
+       "exp": 2.5,
+       "weight": 0.63,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 1,
+       "name": "Turbo Lumboars",
+       "n": 4,
+       "act": 2,
+       "exp": 2,
+       "weight": 0.18,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 3,
+       "name": "Flail",
+       "n": 7,
+       "act": 1,
+       "exp": 3.5,
+       "weight": 0.57,
+       "streak": {
+        "n": 6,
+        "p": 0.0156,
+        "at": 50
+       },
+       "longShots": []
+      },
+      {
+       "ii": 4,
+       "name": "Deadly Crook",
+       "n": 2,
+       "act": 1,
+       "exp": 1,
+       "weight": 0.1,
+       "streak": null,
+       "longShots": []
+      }
+     ],
+     "freeze": null
+    }
+   ],
+   "pop": {
+    "n": 840,
+    "mine": -0.1,
+    "theirs": 0.9,
+    "otherMine": 0.8,
+    "otherTheirs": -1.6
+   }
+  },
+  "real": 653,
+  "alt": 245,
+  "win": 0.16,
+  "N": 1000,
+  "ladder": [
+   {
+    "hp": 6000,
+    "win": 0.16
+   },
+   {
+    "hp": 7000,
+    "win": 0.154
+   },
+   {
+    "hp": 8000,
+    "win": 0.143
+   },
+   {
+    "hp": 10000,
+    "win": 0.135
+   }
+  ],
+  "flips": [
+   {
+    "label": "Shielded Death Metal Drum Kit crits every time",
+    "spec": {
+     "ov": {
+      "0_3": {
+       "crit": "always"
+      }
+     }
+    },
+    "n": 40,
+    "seed": 653
+   },
+   {
+    "label": "Cloverino's Flail never crits",
+    "spec": {
+     "ov": {
+      "1_3": {
+       "crit": "never"
+      }
+     }
+    },
+    "n": 38,
+    "seed": 653
+   },
+   {
+    "label": "Cloverino's Jabalian Totem never crits",
+    "spec": {
+     "ov": {
+      "1_0": {
+       "crit": "never"
+      }
+     }
+    },
+    "n": 36,
+    "seed": 653
+   },
+   {
+    "label": "Cloverino's Flail misses every random haste",
+    "spec": {
+     "ov": {
+      "1_3": {
+       "missRandHaste": true
+      }
+     }
+    },
+    "n": 20,
+    "seed": 653
+   },
+   {
+    "label": "Cloverino's Jabalian Totem misses every random haste",
+    "spec": {
+     "ov": {
+      "1_0": {
+       "missRandHaste": true
+      }
+     }
+    },
+    "n": 19,
+    "seed": 653
+   },
+   {
+    "label": "Cloverino's Deadly Crook misses every random haste",
+    "spec": {
+     "ov": {
+      "1_4": {
+       "missRandHaste": true
+      }
+     }
+    },
+    "n": 19,
+    "seed": 653
+   },
+   {
+    "label": "Cloverino's Turbo Lumboars never crits",
+    "spec": {
+     "ov": {
+      "1_1": {
+       "crit": "never"
+      }
+     }
+    },
+    "n": 15,
+    "seed": 653
+   }
+  ],
+  "of": 40,
+  "margin": {
+   "min": 11,
+   "med": 2813,
+   "max": 4321
+  }
+ }
+}

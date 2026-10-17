@@ -1,0 +1,895 @@
+{
+ "order": 2,
+ "fight": {
+  "key": "d11",
+  "run": "cmv9pafq201gx01pbnu2zrwz2",
+  "day": 11,
+  "label": "Day 11 win vs cdsbradley",
+  "notes": "cdsbradley's health, item tiers and board order aren't in your tracker. The order follows the recap, and the health is set so the fight lasts about as long as the real one. The opponent's Piggles grow in value during the fight; the replay uses each one's real average burn and regen per use.",
+  "dt": 0.05,
+  "maxT": 75,
+  "castGap": 0.25,
+  "sandstormAt": 45,
+  "seed": 5,
+  "title": "SoapBottle vs cdsbradley",
+  "eyebrow": "Day 11 · Hour 6 · Ranked · Patch 19.0 · Gold victory, 10 wins 1 loss",
+  "runUrl": "https://bazaarhub.gg/runs/cmv9pafq201gx01pbnu2zrwz2",
+  "winner": 0,
+  "sides": [
+   {
+    "name": "SoapBottle",
+    "hero": "Vanessa · Level 14",
+    "heroKey": "vanessa",
+    "hp": 6970,
+    "hpSrc": "track",
+    "items": [
+     {
+      "slug": "vampire-squid",
+      "name": "Vampire Squid",
+      "ench": "Shiny",
+      "tier": "Silver",
+      "size": 1,
+      "tags": [
+       "Aquatic",
+       "Weapon",
+       "Friend"
+      ],
+      "cd": 3.8,
+      "cdSrc": "track",
+      "multicast": 2,
+      "mcSrc": "track",
+      "dmg": 217,
+      "dmgSrc": "track",
+      "crit": 108,
+      "critSrc": "track",
+      "lifesteal": 100,
+      "anim": "squid",
+      "real": {
+       "dmg": 2634,
+       "casts": 6
+      },
+      "text": [
+       [
+        "Active: Deal 217 Damage",
+        "yes",
+        "Exact tracker value, already including Strength, Submerged and your other flat bonuses."
+       ],
+       [
+        "Passive: +6% Crit Chance for each day of the run",
+        "yes",
+        "108% on day 11, so every hit crits for double."
+       ],
+       [
+        "Shiny: +1 Multicast",
+        "yes",
+        ""
+       ],
+       [
+        "Lifesteal 100%",
+        "yes",
+        "Heals you for the damage dealt."
+       ]
+      ]
+     },
+     {
+      "slug": "flame-skirt",
+      "name": "Flame Skirt",
+      "tier": "Silver",
+      "size": 2,
+      "tags": [
+       "Apparel"
+      ],
+      "cd": 5,
+      "cdSrc": "track",
+      "haste": {
+       "amt": 1,
+       "mode": "adjacent"
+      },
+      "burnOnAdjSlow": 5,
+      "burnSrc": "track",
+      "anim": "haste",
+      "real": {
+       "burn": 37,
+       "haste": 1
+      },
+      "text": [
+       [
+        "Active: Haste adjacent items 1 second",
+        "yes",
+        "Only the Squid on its left has a cooldown."
+       ],
+       [
+        "Passive: When an adjacent item Slows, Burn 5",
+        "yes",
+        "Integrated HUD is next to it, so every HUD slow burns."
+       ]
+      ]
+     },
+     {
+      "slug": "integrated-hud",
+      "name": "Integrated HUD",
+      "tier": "Gold",
+      "size": 1,
+      "tags": [
+       "Apparel",
+       "Tech"
+      ],
+      "cd": 0,
+      "slowOnRightCrit": 1,
+      "slowSrc": "track",
+      "anim": "glow",
+      "real": {
+       "slow": 4
+      },
+      "text": [
+       [
+        "Passive: The item to the right has +30% Crit Chance",
+        "yes",
+        "Already in Magic Carpet's 70% crit."
+       ],
+       [
+        "Passive: When you Crit with the item to the right, Slow an item 1 second",
+        "yes",
+        "Slows a random enemy item."
+       ]
+      ]
+     },
+     {
+      "slug": "magic-carpet",
+      "name": "Magic Carpet",
+      "tier": "Gold",
+      "size": 2,
+      "tags": [
+       "Vehicle",
+       "Weapon",
+       "Relic"
+      ],
+      "cd": 7,
+      "cdSrc": "track",
+      "dmg": 262,
+      "dmgSrc": "track",
+      "crit": 70,
+      "critSrc": "track",
+      "lifesteal": 101,
+      "cdCutOnAnyCrit": 1,
+      "cdFloor": 1,
+      "fliesOnCrit": true,
+      "anim": "carpet",
+      "real": {
+       "dmg": 2363,
+       "uses": 5
+      },
+      "text": [
+       [
+        "Active: Deal 262 Damage",
+        "yes",
+        ""
+       ],
+       [
+        "Passive: When you Crit, reduce this item's Cooldown by 1 second and it starts Flying",
+        "yes",
+        "Every crit from any of your items cuts its cooldown by 1 second for the rest of the fight, down to 1 second. Once Flying, slows and freezes on it last half as long."
+       ]
+      ]
+     },
+     {
+      "slug": "vampire-squid",
+      "name": "Vampire Squid",
+      "ench": "Turbo",
+      "tier": "Gold",
+      "size": 1,
+      "tags": [
+       "Aquatic",
+       "Weapon",
+       "Friend"
+      ],
+      "cd": 3.96,
+      "cdSrc": "track",
+      "dmg": 174,
+      "dmgSrc": "track",
+      "crit": 141,
+      "critSrc": "track",
+      "lifesteal": 100,
+      "haste": {
+       "amt": 2,
+       "mode": "random"
+      },
+      "anim": "squid",
+      "real": {
+       "dmg": 706,
+       "haste": 2,
+       "uses": 2
+      },
+      "text": [
+       [
+        "Active: Deal 174 Damage",
+        "yes",
+        ""
+       ],
+       [
+        "Passive: +9% Crit Chance for each day of the run",
+        "yes",
+        "141%, always crits."
+       ],
+       [
+        "Turbo: Haste an item 2 seconds",
+        "yes",
+        "Picks a random item of yours with a cooldown."
+       ],
+       [
+        "Lifesteal 100%",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "bilge-worm",
+      "name": "Bilge Worm",
+      "ench": "Mossy",
+      "tier": "Silver",
+      "size": 1,
+      "tags": [
+       "Weapon",
+       "Aquatic"
+      ],
+      "cd": 0,
+      "onEnemyFastest": {
+       "dmg": 122,
+       "regen": 16
+      },
+      "dmgSrc": "track",
+      "lifesteal": 100,
+      "anim": "worm",
+      "real": {
+       "dmg": 976,
+       "regen": 128
+      },
+      "text": [
+       [
+        "Passive: When your enemy uses their fastest item, deal 122 Damage",
+        "yes",
+        "Their fastest item is PenFT (3s)."
+       ],
+       [
+        "Mossy: Regen equal to 10% of this item's Damage",
+        "yes",
+        "16 with Vital Reserve."
+       ]
+      ]
+     },
+     {
+      "slug": "heirlooms",
+      "name": "Heirlooms",
+      "tier": "Gold",
+      "size": 1,
+      "tags": [
+       "Apparel",
+       "Relic"
+      ],
+      "cd": 4,
+      "cdSrc": "track",
+      "shield": 23,
+      "shieldSrc": "track",
+      "valueGain": 15,
+      "crit": 24,
+      "critSrc": "track",
+      "anim": "shield",
+      "real": {
+       "shield": 129,
+       "uses": 2
+      },
+      "text": [
+       [
+        "Active: This gains +15 value",
+        "yes",
+        "Applied before the shield, so each use shields 30 more."
+       ],
+       [
+        "Active: Shield equal to double this item's value",
+        "yes",
+        "Starts at 23."
+       ]
+      ]
+     },
+     {
+      "slug": "nitro",
+      "name": "Nitro",
+      "tier": "Diamond",
+      "size": 1,
+      "tags": [
+       "Tech"
+      ],
+      "cd": 3,
+      "cdSrc": "track",
+      "burnBoth": 18,
+      "burnSrc": "track",
+      "charge": {
+       "amt": 2,
+       "mode": "random"
+      },
+      "crit": 27,
+      "critSrc": "track",
+      "anim": "nitro",
+      "real": {
+       "burn": 218,
+       "uses": 3
+      },
+      "text": [
+       [
+        "Active: Burn both Players 18",
+        "yes",
+        "You burn yourself too."
+       ],
+       [
+        "Active: Charge an item 2 seconds",
+        "yes",
+        "Random item of yours with a cooldown."
+       ]
+      ]
+     }
+    ],
+    "skills": [
+     {
+      "slug": "flurry-of-blows",
+      "name": "Flurry of Blows",
+      "tier": "Diamond",
+      "kind": "flurry",
+      "n": 8,
+      "amt": 1,
+      "text": "The first 8 times you use a Weapon each fight, Charge an item 1 second",
+      "m": "yes"
+     },
+     {
+      "slug": "strength",
+      "name": "Strength",
+      "tier": "Diamond",
+      "kind": "static",
+      "text": "Your items have +40 Damage",
+      "m": "yes",
+      "why": "Already in the tracker damage."
+     },
+     {
+      "slug": "medics-flame",
+      "name": "Medic's Flame",
+      "tier": "Gold",
+      "kind": "medic",
+      "amt": 1,
+      "text": "When you Heal or Regen, your items gain +1 Burn for the fight",
+      "m": "yes",
+      "why": "Every lifesteal hit counts as a heal."
+     },
+     {
+      "slug": "stunning-strike",
+      "name": "Stunning Strike",
+      "tier": "Silver",
+      "kind": "stun",
+      "amt": 2,
+      "text": "The first time you Crit, Freeze an item 2 seconds",
+      "m": "yes"
+     },
+     {
+      "slug": "reaching-the-summit",
+      "name": "Reaching the Summit",
+      "tier": "Gold",
+      "kind": "summit",
+      "amt": 4,
+      "text": "When you Freeze, your items gain 4% Crit Chance",
+      "m": "yes"
+     },
+     {
+      "slug": "hot-spot",
+      "name": "Hot Spot",
+      "tier": "Silver",
+      "kind": "hotspot",
+      "n": 8,
+      "amt": 5,
+      "text": "The first 8 times you use your leftmost item each fight, Burn 5",
+      "m": "yes"
+     },
+     {
+      "slug": "trained",
+      "name": "Trained",
+      "tier": "Bronze",
+      "kind": "trained",
+      "amt": 5,
+      "text": "When you Slow, a Weapon gains 5 Damage",
+      "m": "yes",
+      "why": "This is the +5 you see on the Squid totals."
+     },
+     {
+      "slug": "tremolo",
+      "name": "Tremolo",
+      "tier": "Silver",
+      "kind": "tremolo",
+      "amt": 4,
+      "text": "The first time you use a Burn item, gain 4 Tempo",
+      "m": "yes",
+      "why": "Vanessa has nothing that spends Tempo."
+     },
+     {
+      "slug": "deadly-eye",
+      "name": "Deadly Eye",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "Your Weapons have +15% Crit Chance",
+      "m": "yes",
+      "why": "Already in the tracker crit chance."
+     },
+     {
+      "slug": "arms-race",
+      "name": "Arms Race",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "Your items have +6% Crit Chance for each Weapon you have",
+      "m": "yes",
+      "why": "Already in the tracker crit chance."
+     },
+     {
+      "slug": "submerged",
+      "name": "Submerged",
+      "tier": "Silver",
+      "kind": "static",
+      "text": "Your items have +10 Damage and 10 Shield for each Aquatic item you have",
+      "m": "yes",
+      "why": "Already in the tracker numbers."
+     },
+     {
+      "slug": "iron-sharpens-iron",
+      "name": "Iron Sharpens Iron",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "Your leftmost Weapon has +3 Damage for each Weapon you have bought this run",
+      "m": "yes",
+      "why": "Already in the tracker numbers."
+     },
+     {
+      "slug": "vital-reserve",
+      "name": "Vital Reserve",
+      "tier": "Silver",
+      "kind": "static",
+      "text": "Your rightmost Regen item has +4 Regen",
+      "m": "yes",
+      "why": "Already in Bilge Worm's 16."
+     },
+     {
+      "slug": "teachable-moment",
+      "name": "Teachable Moment",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "You have +25 Max Health for each Skill you have",
+      "m": "yes",
+      "why": "Already in your 6,970 health."
+     },
+     {
+      "slug": "cpu-throttling",
+      "name": "CPU Throttling",
+      "tier": "Gold",
+      "kind": "none",
+      "text": "The first 5 times you use a Core each fight, Slow an item 2 seconds",
+      "m": "n/a",
+      "why": "You have no Core items."
+     },
+     {
+      "slug": "arbitrage",
+      "name": "Arbitrage",
+      "tier": "Silver",
+      "kind": "none",
+      "text": "Your rerolls cost 2 less Gold",
+      "m": "n/a",
+      "why": "Shop only."
+     }
+    ]
+   },
+   {
+    "name": "cdsbradley",
+    "hero": "Pygmalien · Level 13",
+    "heroKey": "pygmalien",
+    "hp": 4800,
+    "hpSrc": "est",
+    "items": [
+     {
+      "slug": "premium-orange-piggles",
+      "name": "Premium Orange Piggles",
+      "ench": "Mossy",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 1,
+      "tags": [
+       "Toy"
+      ],
+      "cd": 4,
+      "cdSrc": "page",
+      "burn": 20,
+      "burnSrc": "run",
+      "regen": 24,
+      "regenSrc": "run",
+      "anim": "piggy",
+      "real": {
+       "burn": 100,
+       "regen": 120,
+       "uses": 5
+      },
+      "text": [
+       [
+        "Active: Burn equal to half this item's value",
+        "partial",
+        "Its value grows during the fight; we use the real average, 20 a use."
+       ],
+       [
+        "Mossy: Regen",
+        "partial",
+        "Real average, 24 a use."
+       ]
+      ]
+     },
+     {
+      "slug": "premium-orange-piggles",
+      "name": "Premium Orange Piggles",
+      "ench": "Mossy",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 1,
+      "tags": [
+       "Toy"
+      ],
+      "cd": 4,
+      "cdSrc": "page",
+      "burn": 39,
+      "burnSrc": "run",
+      "regen": 43,
+      "regenSrc": "run",
+      "anim": "piggy",
+      "real": {
+       "burn": 194,
+       "regen": 214,
+       "uses": 5
+      },
+      "text": [
+       [
+        "Active: Burn equal to half this item's value",
+        "partial",
+        "Real average, 39 a use."
+       ],
+       [
+        "Mossy: Regen",
+        "partial",
+        "Real average, 43 a use."
+       ]
+      ]
+     },
+     {
+      "slug": "premium-piggles",
+      "name": "Premium Piggles",
+      "ench": "Mossy",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 1,
+      "tags": [
+       "Toy"
+      ],
+      "cd": 4,
+      "cdSrc": "page",
+      "anim": "glow",
+      "real": {
+       "uses": 6
+      },
+      "text": [
+       [
+        "Active: Adjacent items gain value",
+        "partial",
+        "Value growth is folded into the Piggles' burn averages."
+       ]
+      ]
+     },
+     {
+      "slug": "abacus",
+      "name": "Abacus",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 1,
+      "tags": [
+       "Tool"
+      ],
+      "cd": 4,
+      "cdSrc": "page",
+      "anim": "glow",
+      "real": {
+       "uses": 3
+      },
+      "text": [
+       [
+        "Active: Adjacent items gain value equal to this item's value",
+        "partial",
+        "Folded into the Piggles' burn averages."
+       ]
+      ]
+     },
+     {
+      "slug": "premium-orange-piggles",
+      "name": "Premium Orange Piggles",
+      "ench": "Mossy",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 1,
+      "tags": [
+       "Toy"
+      ],
+      "cd": 4,
+      "cdSrc": "page",
+      "burn": 67,
+      "burnSrc": "run",
+      "regen": 71,
+      "regenSrc": "run",
+      "anim": "piggy",
+      "real": {
+       "burn": 266,
+       "regen": 282,
+       "uses": 4
+      },
+      "text": [
+       [
+        "Active: Burn equal to half this item's value",
+        "partial",
+        "Real average, 67 a use."
+       ],
+       [
+        "Mossy: Regen",
+        "partial",
+        "Real average, 71 a use."
+       ]
+      ]
+     },
+     {
+      "slug": "games-table",
+      "name": "Games Table",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 2,
+      "tags": [
+       "Relic",
+       "Toy"
+      ],
+      "cd": 6,
+      "cdSrc": "page",
+      "chargeAllNonWeapons": 2,
+      "chargeOnEnemyUse": 2,
+      "anim": "table",
+      "real": {
+       "uses": 5
+      },
+      "text": [
+       [
+        "Active: Charge your other non-Weapons 2 seconds",
+        "yes",
+        ""
+       ],
+       [
+        "Passive: When an enemy uses an item, Charge this 2 seconds",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "penft",
+      "name": "PenFT",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 1,
+      "tags": [
+       "Tech",
+       "Toy"
+      ],
+      "cd": 3,
+      "cdSrc": "page",
+      "anim": "glow",
+      "real": {
+       "uses": 8
+      },
+      "text": [
+       [
+        "Active: Your items gain 4 value",
+        "partial",
+        "Folded into the Piggles' burn averages."
+       ]
+      ]
+     },
+     {
+      "slug": "piggles-board",
+      "name": "Piggles Board",
+      "tier": "Gold",
+      "tierSrc": "est",
+      "size": 2,
+      "tags": [
+       "Toy"
+      ],
+      "cd": 0,
+      "toyCharge": 1,
+      "anim": "glow",
+      "text": [
+       [
+        "Passive: When you use a Toy, Charge another Toy 1 second",
+        "yes",
+        "Board position is a guess; it isn't in the recap."
+       ]
+      ]
+     }
+    ],
+    "skills": []
+   }
+  ]
+ },
+ "summary": {
+  "luck": {
+   "upset": false,
+   "sides": [
+    {
+     "name": "SoapBottle",
+     "act": 12,
+     "exp": 12.2,
+     "items": [
+      {
+       "ii": 0,
+       "name": "Shiny Vampire Squid",
+       "n": 5,
+       "act": 5,
+       "exp": 5,
+       "weight": 0.01,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 3,
+       "name": "Magic Carpet",
+       "n": 5,
+       "act": 3,
+       "exp": 3.7,
+       "weight": 0,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 4,
+       "name": "Turbo Vampire Squid",
+       "n": 2,
+       "act": 2,
+       "exp": 2,
+       "weight": 0,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 6,
+       "name": "Heirlooms",
+       "n": 2,
+       "act": 0,
+       "exp": 0.6,
+       "weight": 0,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 7,
+       "name": "Nitro",
+       "n": 3,
+       "act": 2,
+       "exp": 0.9,
+       "weight": 0,
+       "streak": null,
+       "longShots": [
+        {
+         "p": 27,
+         "t": 3
+        },
+        {
+         "p": 31,
+         "t": 7
+        }
+       ]
+      }
+     ],
+     "freeze": {
+      "on": 2,
+      "name": "Mossy Premium Piggles",
+      "t": 3,
+      "win": 1,
+      "opts": [
+       {
+        "j": 0,
+        "name": "Mossy Premium Orange Piggles",
+        "win": 1
+       },
+       {
+        "j": 1,
+        "name": "Mossy Premium Orange Piggles",
+        "win": 1
+       },
+       {
+        "j": 2,
+        "name": "Mossy Premium Piggles",
+        "win": 1
+       },
+       {
+        "j": 3,
+        "name": "Abacus",
+        "win": 1
+       },
+       {
+        "j": 4,
+        "name": "Mossy Premium Orange Piggles",
+        "win": 1
+       },
+       {
+        "j": 5,
+        "name": "Games Table",
+        "win": 1
+       },
+       {
+        "j": 6,
+        "name": "PenFT",
+        "win": 1
+       }
+      ]
+     }
+    },
+    {
+     "name": "cdsbradley",
+     "act": 0,
+     "exp": 0,
+     "items": [],
+     "freeze": null
+    }
+   ],
+   "pop": {
+    "n": 1000,
+    "mine": 0.8,
+    "theirs": 0,
+    "otherMine": 0,
+    "otherTheirs": 0
+   }
+  },
+  "real": 469,
+  "alt": null,
+  "win": 1,
+  "N": 1000,
+  "ladder": [
+   {
+    "hp": 4800,
+    "win": 1
+   },
+   {
+    "hp": 8000,
+    "win": 0.999
+   },
+   {
+    "hp": 10000,
+    "win": 0.993
+   },
+   {
+    "hp": 12000,
+    "win": 0.935
+   }
+  ],
+  "flips": [
+   {
+    "label": "Magic Carpet never crits",
+    "spec": {
+     "ov": {
+      "0_3": {
+       "crit": "never"
+      }
+     }
+    },
+    "n": 1,
+    "seed": 612
+   }
+  ],
+  "of": 40,
+  "margin": {
+   "min": 5895,
+   "med": 6970,
+   "max": 6970
+  }
+ }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "bazaar-replay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Watch a simulated replay of a The Bazaar fight and see what luck decided it",
+  "scripts": {
+    "start": "node server.js",
+    "precompute": "node tools/precompute.js"
+  },
+  "engines": { "node": ">=18" }
+}

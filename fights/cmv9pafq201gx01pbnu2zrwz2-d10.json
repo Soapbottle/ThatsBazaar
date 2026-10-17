@@ -1,0 +1,1097 @@
+{
+ "order": 1,
+ "fight": {
+  "key": "d10",
+  "run": "cmv9pafq201gx01pbnu2zrwz2",
+  "day": 10,
+  "label": "Day 10 loss vs Plunken",
+  "hpNote": "about what he needs to survive the damage in your recap",
+  "notes": "Plunken's health isn't in your tracker; it's set so the replay ends like the real fight. Your item numbers for this day are worked back from day 11's tracker (before you bought Strength and Integrated HUD) and checked against this recap. Board order follows the recap. Every Plunken item starts at 0% crit and gains 10% each time Deadly Solar Farm is used.",
+  "dt": 0.05,
+  "maxT": 75,
+  "castGap": 0.25,
+  "sandstormAt": 45,
+  "seed": 5,
+  "title": "SoapBottle vs Plunken",
+  "eyebrow": "Day 10 · Hour 6 · Ranked · Patch 19.0 · The run's only loss",
+  "runUrl": "https://bazaarhub.gg/runs/cmv9pafq201gx01pbnu2zrwz2?day=10",
+  "winner": 1,
+  "sides": [
+   {
+    "name": "SoapBottle",
+    "hero": "Vanessa · Level 13",
+    "heroKey": "vanessa",
+    "hp": 6055,
+    "hpSrc": "track",
+    "items": [
+     {
+      "slug": "wanted-poster",
+      "name": "Wanted Poster",
+      "tier": "Gold",
+      "size": 2,
+      "tags": [],
+      "cd": 0,
+      "anim": "glow",
+      "text": [
+       [
+        "Passive: Your items have +20% Crit Chance",
+        "yes",
+        "Already in every item's crit chance below."
+       ],
+       [
+        "Passive: Gain XP when you win a fight against a Hero",
+        "n/a",
+        "Only matters after the fight."
+       ]
+      ]
+     },
+     {
+      "slug": "vampire-squid",
+      "name": "Vampire Squid",
+      "ench": "Shiny",
+      "tier": "Silver",
+      "size": 1,
+      "tags": [
+       "Aquatic",
+       "Weapon",
+       "Friend"
+      ],
+      "cd": 3.8,
+      "cdSrc": "track",
+      "multicast": 2,
+      "mcSrc": "track",
+      "dmg": 177,
+      "dmgSrc": "est",
+      "crit": 125,
+      "critSrc": "est",
+      "lifesteal": 100,
+      "anim": "squid",
+      "real": {
+       "dmg": 3280,
+       "casts": 8
+      },
+      "text": [
+       [
+        "Active: Deal 177 Damage",
+        "partial",
+        "Day 11's 217 minus Strength's 40. Grows 20 each time Sharkclaws is used."
+       ],
+       [
+        "Passive: +6% Crit Chance for each day of the run",
+        "yes",
+        "125% on day 10 with Wanted Poster, so every hit crits."
+       ],
+       [
+        "Shiny: +1 Multicast",
+        "yes",
+        ""
+       ],
+       [
+        "Lifesteal 100%",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "vampire-squid",
+      "name": "Vampire Squid",
+      "ench": "Turbo",
+      "tier": "Gold",
+      "size": 1,
+      "tags": [
+       "Aquatic",
+       "Weapon",
+       "Friend"
+      ],
+      "cd": 3.96,
+      "cdSrc": "track",
+      "dmg": 134,
+      "dmgSrc": "est",
+      "crit": 155,
+      "critSrc": "est",
+      "lifesteal": 100,
+      "haste": {
+       "amt": 2,
+       "mode": "random"
+      },
+      "anim": "squid",
+      "real": {
+       "dmg": 972,
+       "haste": 3,
+       "uses": 3
+      },
+      "text": [
+       [
+        "Active: Deal 134 Damage",
+        "partial",
+        "Day 11's 174 minus Strength's 40."
+       ],
+       [
+        "Passive: +9% Crit Chance for each day of the run",
+        "yes",
+        "Always crits."
+       ],
+       [
+        "Turbo: Haste an item 2 seconds",
+        "yes",
+        ""
+       ],
+       [
+        "Lifesteal 100%",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "bilge-worm",
+      "name": "Bilge Worm",
+      "ench": "Mossy",
+      "tier": "Silver",
+      "size": 1,
+      "tags": [
+       "Weapon",
+       "Aquatic"
+      ],
+      "cd": 0,
+      "onEnemyFastest": {
+       "dmg": 114,
+       "regen": 15
+      },
+      "dmgSrc": "run",
+      "lifesteal": 100,
+      "anim": "worm",
+      "real": {
+       "dmg": 1140,
+       "regen": 154
+      },
+      "text": [
+       [
+        "Passive: When your enemy uses their fastest item, deal 114 Damage",
+        "yes",
+        "Their fastest item is Ignition Core (5s): 10 uses, 10 × 114 = 1,140, an exact match."
+       ],
+       [
+        "Mossy: Regen equal to 10% of this item's Damage",
+        "yes",
+        "15 with Vital Reserve."
+       ]
+      ]
+     },
+     {
+      "slug": "sharkclaws",
+      "name": "Sharkclaws",
+      "tier": "Silver",
+      "size": 2,
+      "tags": [
+       "Aquatic",
+       "Weapon"
+      ],
+      "cd": 6,
+      "cdSrc": "page",
+      "dmg": 140,
+      "dmgSrc": "est",
+      "crit": 65,
+      "critSrc": "est",
+      "lifesteal": 0,
+      "allDmgGain": 20,
+      "anim": "slash",
+      "real": {
+       "dmg": 464,
+       "uses": 2
+      },
+      "text": [
+       [
+        "Active: Deal 140 Damage",
+        "partial",
+        "Silver's 20 plus your flat damage bonuses, estimated from the recap."
+       ],
+       [
+        "Active: Your items gain 20 Damage",
+        "yes",
+        "Both Squids, Magic Carpet and this item get +20 for the rest of the fight."
+       ]
+      ]
+     },
+     {
+      "slug": "magic-carpet",
+      "name": "Magic Carpet",
+      "tier": "Gold",
+      "size": 2,
+      "tags": [
+       "Vehicle",
+       "Weapon",
+       "Relic"
+      ],
+      "cd": 7,
+      "cdSrc": "page",
+      "dmg": 222,
+      "dmgSrc": "est",
+      "crit": 66,
+      "critSrc": "est",
+      "lifesteal": 101,
+      "cdCutOnAnyCrit": 1,
+      "cdFloor": 1,
+      "fliesOnCrit": true,
+      "anim": "carpet",
+      "real": {
+       "dmg": 4140,
+       "uses": 11
+      },
+      "text": [
+       [
+        "Active: Deal 222 Damage",
+        "partial",
+        "Day 11's 262 minus Strength's 40."
+       ],
+       [
+        "Passive: When you Crit, reduce this item's Cooldown by 1 second and it starts Flying",
+        "yes",
+        "Your Squids always crit, so this reaches 1 second fast. Flying halves freezes on it."
+       ]
+      ]
+     },
+     {
+      "slug": "nitro",
+      "name": "Nitro",
+      "tier": "Diamond",
+      "size": 1,
+      "tags": [
+       "Tech"
+      ],
+      "cd": 3,
+      "cdSrc": "track",
+      "burnBoth": 18,
+      "burnSrc": "track",
+      "charge": {
+       "amt": 2,
+       "mode": "random"
+      },
+      "crit": 53,
+      "critSrc": "est",
+      "anim": "nitro",
+      "real": {
+       "burn": 344,
+       "uses": 5
+      },
+      "text": [
+       [
+        "Active: Burn both Players 18",
+        "yes",
+        "You burn yourself too, which hurts in a burn race."
+       ],
+       [
+        "Active: Charge an item 2 seconds",
+        "yes",
+        ""
+       ]
+      ]
+     }
+    ],
+    "skills": [
+     {
+      "slug": "flurry-of-blows",
+      "name": "Flurry of Blows",
+      "tier": "Diamond",
+      "kind": "flurry",
+      "n": 8,
+      "amt": 1,
+      "text": "The first 8 times you use a Weapon each fight, Charge an item 1 second",
+      "m": "yes"
+     },
+     {
+      "slug": "medics-flame",
+      "name": "Medic's Flame",
+      "tier": "Gold",
+      "kind": "medic",
+      "amt": 1,
+      "text": "When you Heal or Regen, your items gain +1 Burn for the fight",
+      "m": "yes",
+      "why": "Every lifesteal hit counts as a heal."
+     },
+     {
+      "slug": "stunning-strike",
+      "name": "Stunning Strike",
+      "tier": "Silver",
+      "kind": "stun",
+      "amt": 2,
+      "text": "The first time you Crit, Freeze an item 2 seconds",
+      "m": "yes"
+     },
+     {
+      "slug": "reaching-the-summit",
+      "name": "Reaching the Summit",
+      "tier": "Gold",
+      "kind": "summit",
+      "amt": 4,
+      "text": "When you Freeze, your items gain 4% Crit Chance",
+      "m": "yes"
+     },
+     {
+      "slug": "hot-spot",
+      "name": "Hot Spot",
+      "tier": "Silver",
+      "kind": "hotspot",
+      "n": 8,
+      "amt": 5,
+      "text": "The first 8 times you use your leftmost item each fight, Burn 5",
+      "m": "yes",
+      "why": "Your leftmost item is Wanted Poster, which is never used, so this never fires."
+     },
+     {
+      "slug": "trained",
+      "name": "Trained",
+      "tier": "Bronze",
+      "kind": "trained",
+      "amt": 5,
+      "text": "When you Slow, a Weapon gains 5 Damage",
+      "m": "yes",
+      "why": "Nothing on this board slows, so it never fires."
+     },
+     {
+      "slug": "tremolo",
+      "name": "Tremolo",
+      "tier": "Silver",
+      "kind": "tremolo",
+      "amt": 4,
+      "text": "The first time you use a Burn item, gain 4 Tempo",
+      "m": "yes",
+      "why": "Vanessa has nothing that spends Tempo."
+     },
+     {
+      "slug": "deadly-eye",
+      "name": "Deadly Eye",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "Your Weapons have +15% Crit Chance",
+      "m": "yes",
+      "why": "Already in the crit chances."
+     },
+     {
+      "slug": "arms-race",
+      "name": "Arms Race",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "Your items have +6% Crit Chance for each Weapon you have",
+      "m": "yes",
+      "why": "Already in the crit chances."
+     },
+     {
+      "slug": "submerged",
+      "name": "Submerged",
+      "tier": "Silver",
+      "kind": "static",
+      "text": "Your items have +10 Damage and 10 Shield for each Aquatic item you have",
+      "m": "yes",
+      "why": "Already in the damage numbers."
+     },
+     {
+      "slug": "iron-sharpens-iron",
+      "name": "Iron Sharpens Iron",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "Your leftmost Weapon has +3 Damage for each Weapon you have bought this run",
+      "m": "yes",
+      "why": "Already in the damage numbers."
+     },
+     {
+      "slug": "vital-reserve",
+      "name": "Vital Reserve",
+      "tier": "Silver",
+      "kind": "static",
+      "text": "Your rightmost Regen item has +4 Regen",
+      "m": "yes",
+      "why": "Already in Bilge Worm's 15."
+     },
+     {
+      "slug": "teachable-moment",
+      "name": "Teachable Moment",
+      "tier": "Gold",
+      "kind": "static",
+      "text": "You have +25 Max Health for each Skill you have",
+      "m": "yes",
+      "why": "Already in your 6,055 health."
+     },
+     {
+      "slug": "arbitrage",
+      "name": "Arbitrage",
+      "tier": "Silver",
+      "kind": "none",
+      "text": "Your rerolls cost 2 less Gold",
+      "m": "n/a",
+      "why": "Shop only."
+     }
+    ]
+   },
+   {
+    "name": "Plunken",
+    "hero": "Dooley · Level 12",
+    "heroKey": "dooley",
+    "hp": 7600,
+    "hpSrc": "est",
+    "items": [
+     {
+      "slug": "solar-farm",
+      "name": "Solar Farm",
+      "ench": "Deadly",
+      "tier": "Diamond",
+      "size": 3,
+      "tags": [
+       "Property",
+       "Tech"
+      ],
+      "cd": 6,
+      "cdSrc": "page",
+      "haste": {
+       "amt": 1,
+       "mode": "others"
+      },
+      "regen": 30,
+      "regenSrc": "page",
+      "crit": 0,
+      "critSrc": "rule",
+      "chargeOnOwnBurn": 2,
+      "critAura": 10,
+      "anim": "haste",
+      "real": {
+       "uses": 12,
+       "regen": 640,
+       "haste": 55
+      },
+      "text": [
+       [
+        "Active: Haste your other items 1 second",
+        "yes",
+        ""
+       ],
+       [
+        "Active: Regen 30",
+        "yes",
+        "Crits double it."
+       ],
+       [
+        "Passive: When you Burn, Charge this 2 seconds",
+        "yes",
+        "Every burn their items put on you charges it, which is why it fired 12 times."
+       ],
+       [
+        "Deadly: Your items gain 10% Crit Chance",
+        "yes",
+        "Each use, for the rest of the fight, so their burns crit more and more."
+       ]
+      ]
+     },
+     {
+      "slug": "red-f1r3fly",
+      "name": "RED-F1R3FLY",
+      "ench": "Turbo",
+      "tier": "Silver",
+      "size": 1,
+      "tags": [
+       "Friend"
+      ],
+      "cd": 7,
+      "cdSrc": "page",
+      "burn": 8,
+      "burnSrc": "page",
+      "crit": 0,
+      "critSrc": "rule",
+      "haste": {
+       "amt": 1,
+       "mode": "random"
+      },
+      "chargeOnAdjHaste": 1,
+      "anim": "nitro",
+      "real": {
+       "burn": 158,
+       "haste": 7,
+       "uses": 7
+      },
+      "text": [
+       [
+        "Active: Burn 8",
+        "yes",
+        "Grows 2 each use from Conflagration."
+       ],
+       [
+        "Turbo: Haste an item 1 second",
+        "yes",
+        ""
+       ],
+       [
+        "Passive: When an adjacent item Hastes or Slows, Charge this 1 second",
+        "yes",
+        "Solar Farm is next to it and hastes every use."
+       ]
+      ]
+     },
+     {
+      "slug": "soldering-gun",
+      "name": "Soldering Gun",
+      "tier": "Gold",
+      "size": 1,
+      "tags": [
+       "Tool"
+      ],
+      "cd": 6,
+      "cdSrc": "page",
+      "burn": 3,
+      "burnSrc": "page",
+      "multicast": 3,
+      "mcSrc": "page",
+      "crit": 0,
+      "critSrc": "rule",
+      "anim": "nitro",
+      "real": {
+       "burn": 134,
+       "casts": 9
+      },
+      "text": [
+       [
+        "Active: Burn 3",
+        "yes",
+        "Grows 2 each hit from Conflagration."
+       ],
+       [
+        "Passive: +1 Multicast if adjacent to a Friend, +1 if adjacent to a Tool",
+        "yes",
+        "Next to RED-F1R3FLY and Micro Dave, so 3 hits a use."
+       ]
+      ]
+     },
+     {
+      "slug": "micro-dave",
+      "name": "Micro Dave",
+      "tier": "Silver",
+      "size": 2,
+      "tags": [
+       "Friend",
+       "Tool"
+      ],
+      "cd": 8,
+      "cdSrc": "page",
+      "burn": 6,
+      "burnSrc": "page",
+      "crit": 0,
+      "critSrc": "rule",
+      "chargeOnUse": {
+       "sizes": [
+        1
+       ],
+       "tags": [
+        "Core"
+       ],
+       "amt": 2
+      },
+      "anim": "nitro",
+      "real": {
+       "burn": 186,
+       "uses": 9
+      },
+      "text": [
+       [
+        "Active: Burn 6",
+        "yes",
+        "Grows 2 each use from Conflagration."
+       ],
+       [
+        "Passive: When you use a Small item or Core, Charge this 2 seconds",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "flint-stones",
+      "name": "Flint Stones",
+      "tier": "Gold",
+      "size": 1,
+      "tags": [
+       "Tool",
+       "Relic"
+      ],
+      "cd": 6,
+      "cdSrc": "page",
+      "burn": 9,
+      "burnSrc": "page",
+      "crit": 0,
+      "critSrc": "rule",
+      "chargeOnUse": {
+       "tags": [
+        "Relic",
+        "Tool"
+       ],
+       "amt": 1
+      },
+      "anim": "nitro",
+      "real": {
+       "burn": 142,
+       "uses": 6
+      },
+      "text": [
+       [
+        "Active: Burn 9",
+        "yes",
+        "Grows 2 each use from Conflagration."
+       ],
+       [
+        "Passive: When you use another Relic or Tool, Charge this 1 second",
+        "yes",
+        ""
+       ]
+      ]
+     },
+     {
+      "slug": "ignition-core",
+      "name": "Ignition Core",
+      "ench": "Restorative",
+      "tier": "Diamond",
+      "size": 2,
+      "tags": [
+       "Core",
+       "Tech"
+      ],
+      "cd": 5,
+      "cdSrc": "page",
+      "burn": 14,
+      "burnSrc": "run",
+      "selfBurnGain": 8,
+      "healFromBurn": 5,
+      "crit": 0,
+      "critSrc": "rule",
+      "chargeOnUseLeft": 1,
+      "anim": "nitro",
+      "real": {
+       "burn": 986,
+       "heal": 4930,
+       "uses": 10
+      },
+      "text": [
+       [
+        "Active: Burn 14",
+        "yes",
+        "Starts at 14 in the recap."
+       ],
+       [
+        "Active: This and Burn items to the right gain 8",
+        "yes",
+        "It's the rightmost item, so only itself: +8 a use, +2 more from Conflagration."
+       ],
+       [
+        "Restorative: Heal equal to 5 times this item's Burn",
+        "yes",
+        "The recap's 4,930 heal is exactly 5 × its 986 burn. Direct heals also clear 5% of their Burn."
+       ],
+       [
+        "Passive: When you use any item to the left, Charge this 1 second",
+        "yes",
+        "Every other item is to its left."
+       ]
+      ]
+     }
+    ],
+    "skills": [
+     {
+      "slug": "conflagration",
+      "name": "Conflagration",
+      "tier": "Gold",
+      "kind": "conflag",
+      "amt": 2,
+      "text": "When you use an item with Burn, that item gains 2 Burn",
+      "m": "yes",
+      "why": "Counts every Soldering Gun hit."
+     },
+     {
+      "slug": "stunning-strike",
+      "name": "Stunning Strike",
+      "tier": "Silver",
+      "kind": "stun",
+      "amt": 2,
+      "text": "The first time you Crit, Freeze an item 2 seconds",
+      "m": "yes",
+      "why": "Lands on a random one of your items. This is the big piece of luck in this fight."
+     },
+     {
+      "slug": "trained",
+      "name": "Trained",
+      "tier": "Bronze",
+      "kind": "none",
+      "amt": 5,
+      "text": "When you Slow, a Weapon gains 5 Damage",
+      "m": "n/a",
+      "why": "Plunken has nothing that slows and no Weapons."
+     },
+     {
+      "slug": "frontal-shielding",
+      "name": "Frontal Shielding",
+      "tier": "Bronze",
+      "kind": "none",
+      "text": "Your leftmost Shield item has +10 Shield",
+      "m": "n/a",
+      "why": "Plunken has no Shield items."
+     },
+     {
+      "slug": "pickpocket",
+      "name": "Pickpocket",
+      "tier": "Bronze",
+      "kind": "none",
+      "text": "At the start of each fight, gain 1 Gold",
+      "m": "n/a",
+      "why": "Gold only."
+     },
+     {
+      "slug": "supply-cache",
+      "name": "Supply Cache",
+      "tier": "Bronze",
+      "kind": "none",
+      "text": "At the start of each day, get a Loot item",
+      "m": "n/a",
+      "why": "Shop only."
+     }
+    ]
+   }
+  ]
+ },
+ "summary": {
+  "luck": {
+   "upset": true,
+   "sides": [
+    {
+     "name": "SoapBottle",
+     "act": 22,
+     "exp": 24.9,
+     "items": [
+      {
+       "ii": 1,
+       "name": "Shiny Vampire Squid",
+       "n": 8,
+       "act": 8,
+       "exp": 8,
+       "weight": 0.66,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 2,
+       "name": "Turbo Vampire Squid",
+       "n": 3,
+       "act": 3,
+       "exp": 3,
+       "weight": 0.15,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 4,
+       "name": "Sharkclaws",
+       "n": 3,
+       "act": 0,
+       "exp": 2.1,
+       "weight": 0.09,
+       "streak": {
+        "n": 3,
+        "p": 0.0298,
+        "at": 69
+       },
+       "longShots": []
+      },
+      {
+       "ii": 5,
+       "name": "Magic Carpet",
+       "n": 12,
+       "act": 7,
+       "exp": 8.4,
+       "weight": 0.73,
+       "streak": {
+        "n": 4,
+        "p": 0.0081,
+        "at": 70
+       },
+       "longShots": []
+      },
+      {
+       "ii": 6,
+       "name": "Nitro",
+       "n": 6,
+       "act": 4,
+       "exp": 3.4,
+       "weight": 0.32,
+       "streak": null,
+       "longShots": []
+      }
+     ],
+     "freeze": {
+      "on": 1,
+      "name": "Turbo RED-F1R3FLY",
+      "t": 3,
+      "win": 0.761,
+      "opts": [
+       {
+        "j": 0,
+        "name": "Deadly Solar Farm",
+        "win": 0.994
+       },
+       {
+        "j": 1,
+        "name": "Turbo RED-F1R3FLY",
+        "win": 0.761
+       },
+       {
+        "j": 2,
+        "name": "Soldering Gun",
+        "win": 0.938
+       },
+       {
+        "j": 3,
+        "name": "Micro Dave",
+        "win": 0.94
+       },
+       {
+        "j": 4,
+        "name": "Flint Stones",
+        "win": 0.94
+       },
+       {
+        "j": 5,
+        "name": "Restorative Ignition Core",
+        "win": 1
+       }
+      ]
+     }
+    },
+    {
+     "name": "Plunken",
+     "act": 25,
+     "exp": 27.3,
+     "items": [
+      {
+       "ii": 0,
+       "name": "Deadly Solar Farm",
+       "n": 11,
+       "act": 6,
+       "exp": 6.5,
+       "weight": 0.22,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 1,
+       "name": "Turbo RED-F1R3FLY",
+       "n": 4,
+       "act": 3,
+       "exp": 2.2,
+       "weight": 0.01,
+       "streak": null,
+       "longShots": [
+        {
+         "p": 40,
+         "t": 8.5
+        }
+       ]
+      },
+      {
+       "ii": 2,
+       "name": "Soldering Gun",
+       "n": 10,
+       "act": 3,
+       "exp": 5.5,
+       "weight": 0,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 3,
+       "name": "Micro Dave",
+       "n": 8,
+       "act": 5,
+       "exp": 4.9,
+       "weight": 0.01,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 4,
+       "name": "Flint Stones",
+       "n": 5,
+       "act": 2,
+       "exp": 2.8,
+       "weight": 0.01,
+       "streak": null,
+       "longShots": []
+      },
+      {
+       "ii": 5,
+       "name": "Restorative Ignition Core",
+       "n": 10,
+       "act": 6,
+       "exp": 5.4,
+       "weight": 0.23,
+       "streak": null,
+       "longShots": [
+        {
+         "p": 30,
+         "t": 6.5
+        },
+        {
+         "p": 40,
+         "t": 8.1
+        }
+       ]
+      }
+     ],
+     "freeze": {
+      "on": 5,
+      "name": "Magic Carpet",
+      "t": 6.5,
+      "win": 0.932,
+      "opts": [
+       {
+        "j": 1,
+        "name": "Shiny Vampire Squid",
+        "win": 0.93
+       },
+       {
+        "j": 2,
+        "name": "Turbo Vampire Squid",
+        "win": 0.943
+       },
+       {
+        "j": 4,
+        "name": "Sharkclaws",
+        "win": 0.949
+       },
+       {
+        "j": 5,
+        "name": "Magic Carpet",
+        "win": 0.932
+       },
+       {
+        "j": 6,
+        "name": "Nitro",
+        "win": 0.918
+       }
+      ]
+     }
+    }
+   ],
+   "pop": {
+    "n": 78,
+    "mine": -1.6,
+    "theirs": 0.3,
+    "otherMine": 0.6,
+    "otherTheirs": -0.7
+   }
+  },
+  "real": 478,
+  "alt": 306,
+  "win": 0.922,
+  "N": 1000,
+  "ladder": [
+   {
+    "hp": 7600,
+    "win": 0.922
+   },
+   {
+    "hp": 8500,
+    "win": 0.769
+   },
+   {
+    "hp": 9500,
+    "win": 0.485
+   },
+   {
+    "hp": 10500,
+    "win": 0.198
+   }
+  ],
+  "flips": [
+   {
+    "label": "Magic Carpet crits every time",
+    "spec": {
+     "ov": {
+      "0_5": {
+       "crit": "always"
+      }
+     }
+    },
+    "n": 40,
+    "seed": 478
+   },
+   {
+    "label": "Plunken's Restorative Ignition Core never crits",
+    "spec": {
+     "ov": {
+      "1_5": {
+       "crit": "never"
+      }
+     }
+    },
+    "n": 40,
+    "seed": 478
+   },
+   {
+    "label": "Your freeze hits Restorative Ignition Core",
+    "spec": {
+     "stunAt": {
+      "0": 5
+     }
+    },
+    "n": 40,
+    "seed": 478
+   },
+   {
+    "label": "Magic Carpet gets every random haste",
+    "spec": {
+     "ov": {
+      "0_5": {
+       "hasteMagnet": true
+      }
+     }
+    },
+    "n": 38,
+    "seed": 478
+   },
+   {
+    "label": "Your freeze hits Deadly Solar Farm",
+    "spec": {
+     "stunAt": {
+      "0": 0
+     }
+    },
+    "n": 38,
+    "seed": 478
+   },
+   {
+    "label": "Shiny Vampire Squid gets every random haste",
+    "spec": {
+     "ov": {
+      "0_1": {
+       "hasteMagnet": true
+      }
+     }
+    },
+    "n": 30,
+    "seed": 478
+   },
+   {
+    "label": "Nitro gets every random haste",
+    "spec": {
+     "ov": {
+      "0_6": {
+       "hasteMagnet": true
+      }
+     }
+    },
+    "n": 25,
+    "seed": 478
+   }
+  ],
+  "of": 40,
+  "margin": {
+   "min": 560,
+   "med": 1613,
+   "max": 3734
+  }
+ }
+}

@@ -1,0 +1,233 @@
+// ---------- Simulation ----------
+function simulate(D){
+  const dt = D.dt, R = n => Math.round(n*1000)/1000;
+  const OV = (si, ii) => (D.ov && D.ov[si + "_" + ii]) || {};
+  let seed = D.seed || 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  const S = D.sides.map((p, si) => ({ si, name:p.name, hpMax:p.hp, hp:p.hp, shield:0, burn:0, regen:0, tempo:0, tempoGained:0, tempoPerSec:p.tempoPerSec||0, burnBonus:0, critBonus:0, crits:0,
+    items: p.items.map((it, ii) => ({ ...it, ii, chargeCfg:it.charge, charge:0, hasteLeft:0, slowLeft:0, freezeLeft:0, dmgBonus:0, burnGain:0, critAdd:0, shieldNow: it.shield || 0,
+      flying:false, st:{ uses:0, casts:0, dmg:0, burn:0, regen:0, shield:0, heal:0, haste:0, slow:0, crit:0, gotCharge:0, gotHaste:0, gotSlow:0, gotFreeze:0, tempo:0, tempoSpent:0 } })),
+    skills: (p.skills || []).map(s => ({ ...s, count:0, st:{ triggers:0, did:{} } })) }));
+  S.forEach(s => {
+    s.cdItems = s.items.filter(x => x.cd > 0).map(x => x.ii);
+    s.fastest = s.cdItems.reduce((a, j) => a < 0 || s.items[j].cd < s.items[a].cd ? j : a, -1);
+    s.leftmost = 0;
+  });
+  const events = [], frames = [], queue = [];
+  let t = 0, end = null, step = 0;
+  const ev = e => events.push({ t, ...e });
+  const pick = arr => arr.length ? arr[Math.floor(rnd()*arr.length)] : -1;
+
+  function hit(target, amount, kind){
+    const s = S[target]; let a = amount;
+    if (kind !== "poison" && s.shield > 0){
+      if (kind === "burn"){ const take = Math.min(s.shield, a/2); s.shield -= take; a -= take*2; }
+      else { const take = Math.min(s.shield, a); s.shield -= take; a -= take; }
+    }
+    if (a > 0) s.hp -= a;
+  }
+  function heal(si, amt, src, direct){ const s = S[si]; s.hp = Math.min(s.hpMax, s.hp + amt); if (direct && s.burn > 0) s.burn *= 0.95; if (src >= 0) s.items[src].st.heal += amt; ev({ si, ii:src, kind:"heal", amt }); trigger("heal", { si, src }); }
+  function addBurn(target, amt, si, ii){ S[target].burn += amt; if (ii >= 0) S[si].items[ii].st.burn += amt; ev({ si, ii, kind:"burn", amt, on:target }); if (target !== si) trigger("burn", { si, ii }); }
+  function chargeItem(si, j, amt, fromIi){ const it = S[si].items[j]; if (!it || !(it.cd > 0)) return; it.charge = Math.min(it.cd, it.charge + amt); it.st.gotCharge += amt; ev({ si, ii:fromIi, kind:"charge", target:j, amt }); }
+  function slowItem(si, j, amt, fromSi, fromIi){ const it = S[si].items[j]; if (!it) return; if (OV(si, j).immune){ ev({ si:fromSi, ii:fromIi, kind:"blocked", on:si, target:j }); return; } if (it.flying) amt /= 2; it.slowLeft += amt; it.st.gotSlow += amt; S[fromSi].items[fromIi].st.slow++; ev({ si:fromSi, ii:fromIi, kind:"slow", target:j, on:si, amt }); trigger("slow", { si:fromSi, ii:fromIi }); }
+  function gainTempo(si, amt, ii){ const s = S[si]; s.tempo += amt; s.tempoGained += amt; if (ii >= 0) s.items[ii].st.tempo += amt; }
+  function spendTempo(si, amt, ii){ const s = S[si]; if (s.tempo < amt - 1e-9) return false; s.tempo -= amt; if (ii >= 0) s.items[ii].st.tempoSpent += amt; ev({ si, ii, kind:"tempo", amt:-amt }); return true; }
+  // What if: an item that never gets hasted, or one that always wins the random haste roll (the roll still happens, so later luck stays the same)
+  function pickHaste(si, pool){ const r = pick(pool), mag = pool.filter(j => OV(si, j).hasteMagnet), ok = pool.filter(j => !OV(si, j).missRandHaste);
+    if (mag.length) return mag[0]; if (r >= 0 && OV(si, r).missRandHaste) return ok.length ? ok[pool.indexOf(r) % ok.length] : -1; return r; }
+  function hasteItem(si, j, amt, fromIi){ const me = S[si], x = me.items[j]; if (OV(si, j).noHaste){ if (fromIi >= 0) me.items[fromIi].st.haste++; ev({ si, ii:fromIi, kind:"blocked", on:si, target:j }); return; } x.hasteLeft += amt; x.st.gotHaste += amt; if (fromIi >= 0) me.items[fromIi].st.haste++; ev({ si, ii:fromIi, kind:"haste", amt, target:j }); if (x.tempoOnHasted) gainTempo(si, x.tempoOnHasted, j); }
+  function skillEv(si, k, text){ const sk = S[si].skills[k]; sk.st.triggers++; sk.st.did[text] = (sk.st.did[text]||0) + 1; ev({ si, ii:-1, kind:"skill", skill:k, text }); }
+
+  // Event triggers: items and skills listening to what happens in the fight
+  function trigger(type, e){
+    S.forEach(me => {
+      const foe = S[1 - me.si];
+      me.items.forEach(it => {
+        if (type === "use" && e.si !== me.si && it.onEnemyFastest && e.ii === foe.fastest){
+          const d = it.onEnemyFastest.dmg; hit(foe.si, d, "dmg"); it.st.dmg += d; ev({ si:me.si, ii:it.ii, kind:"dmg", amt:d, anim:it.anim });
+          if (it.lifesteal) heal(me.si, d*it.lifesteal/100, it.ii);
+          if (it.onEnemyFastest.regen){ me.regen += it.onEnemyFastest.regen; it.st.regen += it.onEnemyFastest.regen; ev({ si:me.si, ii:it.ii, kind:"regen", amt:it.onEnemyFastest.regen }); trigger("regen", { si:me.si }); }
+          ev({ si:me.si, ii:it.ii, kind:"fire" });
+        }
+        if (type === "use" && e.si === me.si && e.ii !== it.ii){
+          const u = me.items[e.ii];
+          if (it.chargeOnUse && (it.chargeOnUse.sizes?.includes(u.size) || it.chargeOnUse.tags.some(g => u.tags.includes(g)))) chargeItem(me.si, it.ii, it.chargeOnUse.amt, it.ii);
+          if (it.chargeOnUseLeft && e.ii < it.ii) chargeItem(me.si, it.ii, it.chargeOnUseLeft, it.ii);
+        }
+        if (type === "burn" && e.si === me.si && it.chargeOnOwnBurn) chargeItem(me.si, it.ii, it.chargeOnOwnBurn, it.ii);
+        if (type === "haste" && e.si === me.si && it.chargeOnAdjHaste && Math.abs(e.ii - it.ii) === 1) chargeItem(me.si, it.ii, it.chargeOnAdjHaste, it.ii);
+        if (type === "slow" && e.si === me.si && it.chargeOnAdjHaste && Math.abs(e.ii - it.ii) === 1) chargeItem(me.si, it.ii, it.chargeOnAdjHaste, it.ii);
+        if (type === "use" && e.si !== me.si && it.onEnemyUseDmg){
+          const cp = OV(me.si, it.ii).critPct, c = it.crit !== undefined && rnd()*100 < (cp !== undefined ? cp : it.crit) + me.critBonus + it.critAdd, d = it.onEnemyUseDmg * (c ? 2 : 1);
+          hit(foe.si, d, "dmg"); it.st.dmg += d; ev({ si:me.si, ii:it.ii, kind:"dmg", amt:d, crit:c, anim:it.anim });
+        }
+        if (type === "use" && e.si !== me.si && it.chargeOnEnemyUse) chargeItem(me.si, it.ii, it.chargeOnEnemyUse, it.ii);
+        if (type === "use" && e.si === me.si && it.toyCharge && me.items[e.ii].tags.includes("Toy")){
+          const j = pick(me.cdItems.filter(j => j !== e.ii && me.items[j].tags.includes("Toy"))); if (j >= 0) chargeItem(me.si, j, it.toyCharge, it.ii);
+        }
+        if (type === "crit" && e.si === me.si && it.cdCutOnAnyCrit){ if (it.cd > it.cdFloor){ it.cd = Math.max(it.cdFloor, R(it.cd - it.cdCutOnAnyCrit)); it.charge = Math.min(it.charge, it.cd); it.st.cdCut = (it.st.cdCut||0) + it.cdCutOnAnyCrit; ev({ si:me.si, ii:it.ii, kind:"cdcut", amt:it.cd }); } if (it.fliesOnCrit) it.flying = true; }
+        if (type === "crit" && e.si === me.si && it.slowOnRightCrit && e.ii === it.ii + 1){
+          const j = pick(foe.cdItems); if (j >= 0) slowItem(foe.si, j, it.slowOnRightCrit, me.si, it.ii);
+        }
+        if (type === "slow" && e.si === me.si && it.burnOnAdjSlow && Math.abs(e.ii - it.ii) === 1){
+          addBurn(foe.si, it.burnOnAdjSlow + me.burnBonus, me.si, it.ii); ev({ si:me.si, ii:it.ii, kind:"fire" });
+        }
+      });
+      me.skills.forEach((sk, k) => {
+        if (D.skillOff && D.skillOff[me.si + "_" + k]) return;
+        if (sk.kind === "flurry" && type === "use" && e.si === me.si && me.items[e.ii].tags.includes("Weapon") && sk.count < sk.n){
+          sk.count++; const j = pick(me.cdItems.filter(j => j !== e.ii)); if (j >= 0){ chargeItem(me.si, j, sk.amt, -1); skillEv(me.si, k, `Charged ${me.items[j].name} 1s`); }
+        }
+        if (sk.kind === "medic" && (type === "heal" || type === "regen") && e.si === me.si){ me.burnBonus += sk.amt; sk.st.triggers++; sk.st.did = { [`Burn items +${me.burnBonus} burn`]: 1 }; }
+        if (sk.kind === "stun" && type === "crit" && e.si === me.si && sk.count < 1){
+          sk.count++; let j = pick(foe.cdItems); if (D.stunAt && D.stunAt[me.si] !== undefined) j = D.stunAt[me.si]; if (j >= 0 && OV(foe.si, j).immune){ skillEv(me.si, k, `Freeze on ${foe.items[j].name} blocked`); } else if (j >= 0){ const fa = foe.items[j].flying ? sk.amt/2 : sk.amt; foe.items[j].freezeLeft += fa; foe.items[j].st.gotFreeze += fa; skillEv(me.si, k, `Froze ${foe.items[j].name} ${sk.amt}s`); ev({ si:me.si, ii:-1, kind:"freeze", on:foe.si, target:j, amt:sk.amt }); trigger("freeze", { si:me.si }); }
+        }
+        if (sk.kind === "sharpened" && type === "use" && e.si === me.si && me.items[e.ii].tags.includes("Weapon")){ [e.ii-1, e.ii+1].forEach(j => { if (me.items[j]) me.items[j].critAdd += sk.amt; }); skillEv(me.si, k, `Items next to ${me.items[e.ii].name} +${sk.amt}% crit`); }
+        if (sk.kind === "plowshares" && type === "use" && e.si === me.si && me.items[e.ii].tags.includes("Tool")){ [e.ii-1, e.ii+1].forEach(j => { const x = me.items[j]; if (x && x.tags.includes("Weapon") && x.dmg){ x.dmgBonus += sk.amt; skillEv(me.si, k, `${x.name} +${sk.amt} damage`); } }); }
+        if (sk.kind === "firstflames" && type === "use" && e.si === me.si && me.items[e.ii].size === 3 && sk.count < 1){ sk.count++; addBurn(foe.si, sk.amt, me.si, -1); skillEv(me.si, k, `Burn ${sk.amt}`); }
+        if (sk.kind === "heatlover" && type === "burn" && e.si === me.si){ me.regen += sk.amt; sk.total = (sk.total||0) + sk.amt; sk.st.triggers++; sk.st.did = { [`Regen +${sk.total} for the fight`]: 1 }; }
+        if (sk.kind === "summit" && type === "freeze" && e.si === me.si){ me.critBonus += sk.amt; skillEv(me.si, k, `Items +${sk.amt}% crit`); }
+        if (sk.kind === "hotspot" && type === "use" && e.si === me.si && e.ii === me.leftmost && sk.count < sk.n){ sk.count++; addBurn(foe.si, sk.amt + me.burnBonus, me.si, -1); skillEv(me.si, k, `Burn ${sk.amt + me.burnBonus}`); }
+        if (sk.kind === "trained" && type === "slow" && e.si === me.si){
+          const j = pick(me.items.filter(x => x.tags.includes("Weapon")).map(x => x.ii)); if (j >= 0){ me.items[j].dmgBonus += sk.amt; skillEv(me.si, k, `${me.items[j].name} +${sk.amt} damage`); }
+        }
+        if (sk.kind === "tremolo" && type === "use" && e.si === me.si && sk.count < 1 && (me.items[e.ii].burn || me.items[e.ii].burnBoth)){ sk.count++; me.tempo += sk.amt; skillEv(me.si, k, `Gained ${sk.amt} Tempo`); }
+      });
+    });
+  }
+
+  function cast(si, ii, k){
+    const me = S[si], foe = 1 - si, it = me.items[ii];
+    it.st.casts++;
+    const ov = OV(si, ii), roll = it.crit !== undefined ? rnd()*100 : 0;
+    const crit = it.crit !== undefined && (ov.crit === "always" ? true : ov.crit === "never" ? false : roll < (ov.critPct !== undefined ? ov.critPct : it.crit) + me.critBonus + it.critAdd);
+    const m = crit ? 2 : 1;
+    if (it.valueGain){ it.shieldNow += 2*it.valueGain; }
+    if (it.dmg){
+      const d = (it.dmg + it.dmgBonus) * m; hit(foe, d, "dmg"); it.st.dmg += d;
+      ev({ si, ii, kind:"dmg", amt:d, crit, anim:it.anim });
+      if (it.lifesteal) heal(si, d*it.lifesteal/100, ii);
+      if (it.shieldFromDmg){ me.shield += d; it.st.shield += d; ev({ si, ii, kind:"shield", amt:d }); }
+    }
+    if (it.burnPctDmg){ it.burn = Math.round((it.dmg + it.dmgBonus) * it.burnPctDmg) + (it.burnFlat || 0); }
+    if (it.burn){
+      const b = (it.burn + it.burnGain + me.burnBonus) * m; addBurn(foe, b, si, ii);
+      if (it.healFromBurn) heal(si, b*it.healFromBurn, ii, true);
+      me.skills.forEach((sk, k) => { if (sk.kind === "conflag" && !(D.skillOff && D.skillOff[si + "_" + k])){ it.burnGain += sk.amt; skillEv(si, k, `${it.name} +${sk.amt} burn`); } });
+      if (it.selfBurnGain) it.burnGain += it.selfBurnGain;
+    }
+    if (it.burnBoth){ const b = (it.burnBoth + me.burnBonus) * m; addBurn(foe, b, si, ii); S[si].burn += b; ev({ si, ii, kind:"burn", amt:b, on:si, self:true }); }
+    if (it.shield){ const sh = it.shieldNow * m; me.shield += sh; it.st.shield += sh; ev({ si, ii, kind:"shield", amt:sh }); }
+    if (it.regen){ const rg = it.regen * m; me.regen += rg; it.st.regen += rg; ev({ si, ii, kind:"regen", amt:rg }); trigger("regen", { si }); }
+    if (k === 0){
+      if (it.haste){
+        const targets = it.haste.mode === "adjacent" ? [ii-1, ii+1].filter(j => me.items[j] && me.items[j].cd > 0) : it.haste.mode === "others" ? me.cdItems.filter(j => j !== ii) : it.haste.mode === "self" ? [ii] :
+          it.haste.mode === "friendAndOther" ? [pickHaste(si, me.cdItems.filter(j => j !== ii && me.items[j].tags.includes("Friend"))), pickHaste(si, me.cdItems.filter(j => j !== ii && !me.items[j].tags.includes("Friend")))].filter(j => j >= 0) :
+          it.haste.n > 1 ? (() => { const pool = me.cdItems.filter(j => j !== ii), out = []; const mag = pool.filter(j => OV(si, j).hasteMagnet); for (let q = 0; q < it.haste.n && pool.length; q++) out.push(pool.splice(Math.floor(rnd()*pool.length), 1)[0]); if (mag.length && !out.includes(mag[0])) out[out.length - 1] = mag[0]; return out.filter(j => !OV(si, j).missRandHaste); })() : [pickHaste(si, me.cdItems.filter(j => j !== ii))].filter(j => j >= 0);
+        targets.forEach(j => hasteItem(si, j, it.haste.amt, ii));
+        if (targets.length) trigger("haste", { si, ii });
+      }
+      if (it.tempoDoubleRight && me.items[ii+1] && me.items[ii+1].dmg && spendTempo(si, it.tempoDoubleRight, ii)){ const x = me.items[ii+1]; x.dmgBonus += x.dmg + x.dmgBonus; ev({ si, ii, kind:"double", target:ii+1 }); }
+      if (it.critAura){ me.critBonus += it.critAura; it.st.aura = (it.st.aura||0) + it.critAura; }
+      if (it.allDmgGain) me.items.forEach(x => { if (x.dmg) x.dmgBonus += it.allDmgGain; });
+      if (it.chargeCfg){ const j = pick(me.cdItems.filter(j => j !== ii)); if (j >= 0) chargeItem(si, j, it.chargeCfg.amt, ii); }
+      if (it.chargeAllNonWeapons) me.cdItems.filter(j => j !== ii && !me.items[j].tags.includes("Weapon")).forEach(j => chargeItem(si, j, it.chargeAllNonWeapons, ii));
+    }
+    if (it.crit !== undefined && !ov.crit) ev({ si, ii, kind:"roll", crit, p:Math.min(100,(ov.critPct !== undefined ? ov.critPct : it.crit) + me.critBonus + it.critAdd) }); if (crit){ it.st.crit++; me.crits++; trigger("crit", { si, ii }); }
+  }
+  function use(si, ii){
+    const me = S[si], it = me.items[ii];
+    it.st.uses++;
+    ev({ si, ii, kind:"use" });
+    cast(si, ii, 0);
+    const mc = (it.multicast || 1) + (it.mcPerTempo ? Math.floor(me.tempoGained / it.mcPerTempo) : 0);
+    for (let k = 1; k < mc; k++) queue.push({ at:R(t + k*D.castGap), si, ii, k });
+    trigger("use", { si, ii });
+    if (it.tempoRecast && spendTempo(si, it.tempoRecast, ii)) queue.push({ at:R(t + Math.max(mc, 1)*D.castGap), si, ii, k:0, reuse:true });
+  }
+  function snap(){
+    frames.push(S.map(s => ({ hp:Math.max(0, s.hp), sh:s.shield, burn:s.burn, regen:s.regen, tempo:s.tempo,
+      items: s.items.map(it => ({ cd: it.cd, c: it.cd > 0 ? Math.min(1, it.charge/it.cd) : 0, h: it.hasteLeft > 0, hl: it.hasteLeft, sl: it.slowLeft > 0, fr: it.freezeLeft > 0, d: it.dmg ? it.dmg + it.dmgBonus : null })) })));
+  }
+  S.forEach((s, si) => s.items.forEach((it, ii) => { const f = OV(si, ii).startFreeze; if (f){ it.freezeLeft = f; it.st.gotFreeze += f; } }));
+  snap();
+  while (t < D.maxT && !end){
+    step++; t = R(step*dt);
+    for (let si = 0; si < 2; si++){
+      S[si].items.forEach((it, ii) => {
+        if (!(it.cd > 0)) return;
+        let rate = 1;
+        if (it.freezeLeft > 0){ rate = 0; it.freezeLeft = Math.max(0, R(it.freezeLeft - dt)); }
+        else {
+          const h = it.hasteLeft > 0, s = it.slowLeft > 0;
+          rate = h && !s ? 2 : s && !h ? 0.5 : 1;
+        }
+        if (it.hasteLeft > 0) it.hasteLeft = Math.max(0, R(it.hasteLeft - dt));
+        if (it.slowLeft > 0) it.slowLeft = Math.max(0, R(it.slowLeft - dt));
+        it.charge = Math.min(it.cd, it.charge + dt*rate);
+        if (it.charge >= it.cd - 1e-9){ it.charge = 0; use(si, ii); }
+      });
+    }
+    queue.sort((a, b) => a.at - b.at);
+    while (queue.length && queue[0].at <= t + 1e-9){ const q = queue.shift(); if (q.reuse) use(q.si, q.ii); else cast(q.si, q.ii, q.k); }
+    if (step % Math.round(0.5/dt) === 0) S.forEach((s, si) => {
+      if (s.burn >= 1){ const b = Math.round(s.burn); hit(si, b, "burn"); ev({ si:-1, ii:-1, kind:"burntick", amt:b, on:si }); s.burn *= 0.97; }
+    });
+    if (step % Math.round(1/dt) === 0) S.forEach((s, si) => { if (s.tempoPerSec) gainTempo(si, s.tempoPerSec, -1); });
+    if (step % Math.round(1/dt) === 0) S.forEach((s, si) => { if (s.regen > 0){ s.hp = Math.min(s.hpMax, s.hp + s.regen); ev({ si:-1, ii:-1, kind:"regentick", amt:s.regen, on:si }); } });
+    if (t > D.sandstormAt && step % Math.round(0.2/dt) === 0){
+      const sand = Math.min(1171, Math.round(2*Math.exp(0.67*(t - D.sandstormAt))));
+      S.forEach((s, si) => hit(si, sand, "dmg"));
+    }
+    snap();
+    const dead = S.map(s => s.hp <= 0);
+    if (dead[0] || dead[1]) end = { t, winner: dead[0] && dead[1] ? -1 : dead[1] ? 0 : 1 };
+  }
+  if (!end) end = { t, winner: S[0].hp/S[0].hpMax >= S[1].hp/S[1].hpMax ? 0 : 1, timeout:true };
+  return { frames, events, end, S, stats: S.map(s => s.items.map(it => it.st)), skillStats: S.map(s => s.skills.map(k => k.st)) };
+}
+
+// Crits under 100% and every random target (which item gets charged, hasted, slowed or frozen) change the fight.
+// Run many possible fights and find the one closest to the real recap.
+function scoreRun(r){
+  let sc = 0, n = 0;
+  r.S.forEach((s, si) => s.items.forEach((it, ii) => { const re = D_REAL[si][ii]; if (!re) return; for (const k in re){ sc += Math.abs((it.st[k]||0) - re[k]) / Math.max(re[k], 3); n++; } }));
+  return n ? sc/n : 0;
+}
+let D_REAL = [];
+function fitSeeds(D, N){
+  D_REAL = D.sides.map(p => p.items.map(it => it.real));
+  const runs = [];
+  for (let seed = 1; seed <= N; seed++){
+    const r = simulate({ ...D, seed });
+    runs.push({ seed, score: scoreRun(r) + (r.end.winner === D.winner ? 0 : 1), win: r.end.winner === D.winner, t: r.end.t,
+      stats: r.S.map(s => s.items.map(it => it.st)), skills: r.S.map(s => s.skills.map(k => k.st)) });
+  }
+  runs.sort((a, b) => a.score - b.score);
+  // Per stat: range across all fights and how often a fight lands within 5% of the real value
+  const dist = D.sides.map((p, si) => p.items.map((it, ii) => {
+    if (!it.real) return null; const o = {};
+    for (const k in it.real){ const vals = runs.map(r => r.stats[si][ii][k] || 0), v = it.real[k];
+      o[k] = { min: Math.min(...vals), max: Math.max(...vals), hit: vals.filter(x => Math.abs(x - v) <= Math.max(0.5, v*0.08)).length / vals.length }; }
+    return o; }));
+  // Per skill: how often it fires and what it most often does across all fights
+  const skillDist = D.sides.map((p, si) => (p.skills || []).map((sk, k) => {
+    const trig = runs.map(r => r.skills[si][k].triggers), outcomes = {};
+    runs.forEach(r => new Set(Object.keys(r.skills[si][k].did).map(txt => txt.replace(/\d+/g, "#"))).forEach(key => { outcomes[key] = (outcomes[key]||0) + 1; }));
+    return { min: Math.min(...trig), max: Math.max(...trig), avg: trig.reduce((a, b) => a + b, 0) / trig.length, outcomes };
+  }));
+  return { best: runs[0], runs, dist, skillDist, wins: runs.filter(r => r.win).length / runs.length, N };
+}
+
+// What if: run many fights with some luck locked in or removed, and report how often you win.
+function whatIf(D, N){
+  let wins = 0, tSum = 0, hpSum = 0; const res = [];
+  for (let seed = 1; seed <= N; seed++){
+    const r = simulate({ ...D, seed });
+    const w = r.end.winner === 0; if (w){ wins++; hpSum += Math.max(0, r.S[0].hp); }
+    tSum += r.end.t; res.push({ seed, w, t: r.end.t });
+  }
+  res.sort((a, b) => a.t - b.t);
+  const pool = res.filter(x => x.w === (wins*2 >= N));
+  return { win: wins/N, t: tSum/N, hp: wins ? hpSum/wins : 0, sample: (pool[Math.floor(pool.length/2)] || res[0]).seed, N };
+}
+if (typeof module !== "undefined") module.exports = { simulate, fitSeeds, whatIf };

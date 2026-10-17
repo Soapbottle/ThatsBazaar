@@ -1,0 +1,918 @@
+<title>Bazaar Fight Replay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: BazaarHub's warm leather-and-brass look. Opponent board on top, yours below, tier-framed cards, skills under each hero. */
+:root{
+  color-scheme: dark;
+  --bg:#201008; --panel:#2b170c; --panel-2:#3a2112; --well:#150a05; --line:#5a3a1f;
+  --fg:#f3e2c4; --muted:#c2a57e; --accent:#e8a33c;
+  --hp:#e5525f; --heal:#7bd36a; --shield:#f3d36c; --burn:#ff8b3e; --regen:#7bd36a; --haste:#5cc8ea; --slow:#b58cff; --freeze:#9fe8ff; --charge:#ffe066; --tempo:#c993f2; --ok:#7bd36a; --warn:#ffb15c;
+  --f-bronze:linear-gradient(145deg,#f3c08a,#8a5328 38%,#d39555 62%,#5e3416);
+  --f-silver:linear-gradient(145deg,#ffffff,#8c96a3 38%,#dfe5ec 62%,#58616d);
+  --f-gold:linear-gradient(145deg,#fff3b0,#b9831a 38%,#f5ca4e 62%,#714d0c);
+  --f-diamond:linear-gradient(145deg,#effeff,#3fb2cb 38%,#b4f0fb 62%,#196579);
+  --f-legendary:linear-gradient(145deg,#fbe4ff,#9548d3 38%,#e6afff 62%,#511e7d);
+  --display:"Alegreya SC", Georgia, serif; --body:"Figtree", system-ui, sans-serif; --mono:"JetBrains Mono", ui-monospace, monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:radial-gradient(140% 60% at 50% 0%, #3a1d0c, var(--bg) 60%) fixed, var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,4vw,36px);line-height:1.1}
+h2{font-size:20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+header p{margin:6px 0 0;max-width:66ch;color:var(--muted)}
+.runlink{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.runlink:hover{text-decoration:underline}
+
+.arena{background:linear-gradient(180deg,#2e180b,#241208 50%,#2e180b);border:2px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;box-shadow:inset 0 0 60px #0008}
+.arena.sandstorm::after{content:"";position:absolute;inset:0;background:rgba(217,180,122,.16);pointer-events:none;z-index:1}
+.fx{position:absolute;inset:0;pointer-events:none;z-index:6;overflow:hidden}
+.side{display:flex;flex-direction:column;gap:10px;position:relative;z-index:2}
+.side.opp{flex-direction:column-reverse}
+.who{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.who .name{font-family:var(--display);font-size:21px;font-weight:700}
+.who .hero{color:var(--muted);font-size:13px}
+.bars{flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.hpbar{position:relative;height:26px;border-radius:7px;background:var(--well);border:2px solid #7a5530;overflow:hidden;box-shadow:inset 0 2px 6px #000a}
+.hpbar .hp{position:absolute;inset:0 auto 0 0;background:linear-gradient(180deg,#5fd06a,#2f8f3c);transition:width .08s linear}
+.opp .hpbar .hp{background:linear-gradient(180deg,#f06b77,#b8323a)}
+.hpbar .sh{position:absolute;inset:0 auto 0 0;background:linear-gradient(180deg,#ffe58f,#d9a826);opacity:.9;transition:width .08s linear}
+.hpbar .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;text-shadow:0 1px 2px #000,0 0 4px #000}
+.status{display:flex;gap:6px;flex-wrap:wrap;min-height:22px}
+.chip{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);white-space:nowrap}
+.chip.burn{color:var(--burn)} .chip.regen{color:var(--regen)} .chip.tempo{color:var(--tempo)}
+
+.skills{display:flex;flex-wrap:wrap;gap:6px}
+.skill{position:relative;width:38px;height:38px;border-radius:50%;padding:3px;background:var(--frame);flex:none;box-shadow:0 2px 6px #0008}
+.skill img{width:100%;height:100%;border-radius:50%;display:block;object-fit:cover;max-width:none}
+.skill .n{position:absolute;right:-5px;bottom:-5px;font-family:var(--mono);font-size:10.5px;font-weight:700;background:var(--well);border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:0 4px;line-height:15px}
+.skill.dim{opacity:.55}
+.t-bronze{--frame:var(--f-bronze)} .t-silver{--frame:var(--f-silver)} .t-gold{--frame:var(--f-gold)} .t-diamond{--frame:var(--f-diamond)} .t-legendary{--frame:var(--f-legendary)}
+
+.board-scroll{overflow-x:auto;overflow-y:visible;padding-block:10px 6px}
+.board{display:grid;grid-template-columns:repeat(10,minmax(74px,1fr));gap:6px;min-width:780px}
+.card{position:relative;height:205px;border-radius:12px;padding:4px;background:var(--frame);transition:transform .14s ease-out, box-shadow .14s;box-shadow:0 6px 14px -6px #000,inset 0 0 0 1px rgba(255,255,255,.25)}
+.card.t-diamond{box-shadow:0 6px 14px -6px #000,0 0 14px -4px #72d6ea}
+.card.t-legendary{box-shadow:0 6px 14px -6px #000,0 0 14px -4px #c993f2}
+.card .art{position:absolute;inset:4px;border-radius:9px;overflow:hidden;background:var(--well);box-shadow:inset 0 0 0 1px rgba(0,0,0,.6)}
+.card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;max-width:none}
+.card .recap{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:6px 7px;background:rgba(18,9,4,.96);font-family:var(--mono);font-size:12px;line-height:1.3;overflow:hidden}
+.card .recap .nm{font-family:var(--body,inherit);font-size:11.5px;color:var(--muted);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .recap b{font-weight:600}
+.card.done .top,.card.done .foot,.card.done .uses{visibility:hidden}
+.card .recap > div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .uses{position:absolute;right:5px;bottom:24px;z-index:2;font-family:var(--mono);font-size:11px;padding:0 5px;border-radius:999px;background:rgba(0,0,0,.65);color:#fff}
+.card .cdveil{position:absolute;left:0;right:0;top:0;background:rgba(12,6,2,.6);pointer-events:none}
+.card.hasted .cdveil{background:rgba(20,70,95,.55)}
+.card.slowed .cdveil{background:rgba(70,40,110,.6)}
+.card.frozen .art::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(200,245,255,.55),rgba(120,200,240,.25));box-shadow:inset 0 0 18px #dff8ff}
+.card .cdline{position:absolute;left:0;right:0;height:2px;background:var(--accent);box-shadow:0 0 8px var(--accent);pointer-events:none}
+.card.hasted .cdline{background:var(--haste);box-shadow:0 0 8px var(--haste)}
+.card.slowed .cdline{background:var(--slow);box-shadow:0 0 8px var(--slow)}
+.card .top{position:absolute;top:5px;left:5px;right:5px;display:flex;flex-wrap:wrap;gap:3px;justify-content:space-between;align-items:flex-start}
+.badge{font-family:var(--mono);font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:6px;background:rgba(12,6,2,.85);border:1px solid var(--line);white-space:nowrap}
+.b-dmg{color:#ff9aa2;border-color:#b8323a} .b-burn{color:var(--burn);border-color:#a8501c} .b-hst{color:var(--haste);border-color:#2f7d99}
+.b-sh{color:var(--shield);border-color:#9b7a1e} .b-rg{color:var(--regen);border-color:#3f7a35} .b-cr{color:#ffe066;border-color:#8a7420}
+.b-mc{color:var(--accent)} .b-st{color:var(--slow);border-color:#5d3f99}
+.card .foot{position:absolute;left:0;right:0;bottom:0;padding:18px 6px 5px;background:linear-gradient(transparent,rgba(12,6,2,.94) 55%);display:flex;flex-direction:column;gap:1px}
+.card .ench{align-self:flex-start;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:0 5px;border-radius:4px;background:rgba(12,6,2,.8)}
+.e-shiny{color:#ffe680} .e-turbo{color:#6fe0ff} .e-mossy{color:#8fdc6a} .e-fiery{color:#ff8b3e} .e-icy{color:#9fe8ff} .e-toxic{color:#78e05a} .e-golden{color:#ffd24a} .e-heavy{color:#c9a27a} .e-shielded{color:#f3d36c} .e-restorative{color:#7bd36a} .e-deadly{color:#ff6b6b} .e-radiant{color:#fff4c2} .e-obsidian{color:#c9b3ff}
+.card .row{display:flex;justify-content:space-between;align-items:flex-end;gap:4px;flex-wrap:wrap}
+.card .nm{font-weight:700;font-size:12.5px;line-height:1.1;text-shadow:0 1px 2px #000}
+.card .cd{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.card.fire{box-shadow:0 0 0 3px var(--accent),0 0 30px 4px rgba(232,163,60,.75)}
+.card.empty{background:transparent;border:2px dashed var(--line);box-shadow:none;opacity:.6;display:flex;justify-content:center;align-items:center;font-size:11px;color:var(--muted);text-align:center;padding:8px}
+
+.mid{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:8px;border-block:1px solid var(--line);position:relative;z-index:2}
+.clock{font-family:var(--mono);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;min-width:5.5ch}
+.clock small{font-size:13px;color:var(--muted);margin-left:6px;font-weight:400}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-weight:600;color:var(--fg);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:linear-gradient(180deg,#f6bd5a,#d68a22);color:#2a1505;border-color:#f6bd5a;min-width:84px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:7px 10px;background:transparent;font-family:var(--mono);font-size:12.5px}
+.seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--accent)}
+.scrub{width:100%;accent-color:var(--accent)}
+
+.floater{position:absolute;font-family:var(--mono);font-weight:700;font-size:17px;text-shadow:0 2px 4px #000;white-space:nowrap;transform:translate(-50%,-50%)}
+.floater.big{font-size:24px}
+.floater.small{font-size:13px}
+.orb{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%}
+.orb.dmg{background:radial-gradient(circle,#fff 0 20%,#ff7a6b 45%,transparent 72%);box-shadow:0 0 16px 6px rgba(229,82,95,.7)}
+.orb.crit{width:24px;height:24px;margin:-12px 0 0 -12px;background:radial-gradient(circle,#fff 0 22%,#ffe066 48%,transparent 74%);box-shadow:0 0 22px 8px rgba(255,224,102,.65)}
+.orb.burn{background:radial-gradient(circle,#fff3c4 0 15%,var(--burn) 45%,transparent 72%);box-shadow:0 0 14px 5px rgba(255,139,62,.7)}
+.orb.haste{width:12px;height:12px;margin:-6px 0 0 -6px;background:radial-gradient(circle,#fff 0 20%,var(--haste) 50%,transparent 75%);box-shadow:0 0 14px 5px rgba(92,200,234,.7)}
+.orb.charge{width:12px;height:12px;margin:-6px 0 0 -6px;background:radial-gradient(circle,#fff 0 20%,var(--charge) 50%,transparent 75%);box-shadow:0 0 14px 5px rgba(255,224,102,.7)}
+.orb.slow{width:14px;height:14px;margin:-7px 0 0 -7px;background:radial-gradient(circle,#fff 0 20%,var(--slow) 50%,transparent 75%);box-shadow:0 0 14px 5px rgba(181,140,255,.7)}
+.orb.ink{width:20px;height:20px;margin:-10px 0 0 -10px;background:radial-gradient(circle,#ffb3c8 0 18%,#8e2f6a 50%,transparent 75%);box-shadow:0 0 16px 6px rgba(200,60,140,.6)}
+.ring{position:absolute;border-radius:50%;border:3px solid var(--accent);transform:translate(-50%,-50%)}
+.slash{position:absolute;width:90px;height:6px;border-radius:6px;background:linear-gradient(90deg,transparent,#fff,#ffe066,transparent);transform-origin:center}
+.dome{position:absolute;border-radius:12px;border:2px solid var(--shield);box-shadow:0 0 22px 4px rgba(243,211,108,.5) inset}
+svg.links{position:absolute;inset:0;width:100%;height:100%}
+
+.banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;background:rgba(32,16,8,.94);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px -8px #000;z-index:8;flex-direction:column;gap:4px;text-align:center;padding:10px 22px;max-width:calc(100% - 32px)}
+.banner .big{font-family:var(--display);font-size:clamp(34px,7vw,56px);font-weight:800}
+.banner.win .big{color:var(--accent)} .banner.lose .big{color:var(--hp)}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.log{font-family:var(--mono);font-size:12.5px;max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.log div{display:grid;grid-template-columns:5ch 1fr;gap:8px;padding:2px 4px;border-radius:4px}
+.log div.future{opacity:.3}
+.log .t{color:var(--muted);font-variant-numeric:tabular-nums}
+.log .them{color:#f2b6a0} .log .sk{color:var(--accent)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.num{font-family:var(--mono)}
+.wibar{position:relative;z-index:7;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--accent);border-radius:10px;background:rgba(232,163,60,.12);font-weight:600}
+.wi-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.wi-grid{grid-template-columns:minmax(0,1fr)}}
+.wi-grid select{font:inherit;font-size:13px;background:var(--well);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+.wi-grid select.set{border-color:var(--accent);color:var(--accent)}
+.critpick{display:flex;gap:6px;align-items:center;margin-top:4px}
+.critpick input{width:110px;accent-color:var(--accent)}
+.critpick .num{font-size:12px;min-width:38px}
+.critpick .num.set{color:var(--accent)}
+#wi-hp{width:96px;font-family:var(--mono);font-size:13px;background:var(--well);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.wi-skills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.wi-skills label{display:flex;gap:6px;align-items:center;font-size:13px;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);cursor:pointer}
+.wi-skills input{accent-color:var(--accent)}
+.wi-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.ladder{display:flex;flex-wrap:wrap;gap:6px}
+.ladder span{font-family:var(--mono);font-size:13px;padding:4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2)}
+.ladder span.cur{border-color:var(--accent);color:var(--accent)}
+.flips{display:grid;gap:6px}
+.flips .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,180px) auto auto;gap:10px;align-items:center;font-size:13.5px}
+.tile{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.tile .k{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--mono);font-size:24px;font-weight:600}
+.tile .d{font-family:var(--mono);font-size:13px}
+.up{color:var(--ok)} .down{color:var(--hp)}
+.wi-thumb{display:flex;gap:8px;align-items:center}
+.wi-thumb .pic{width:30px;height:30px;border-radius:7px;padding:2px;background:var(--frame);flex:none}
+.wi-thumb .pic img{width:100%;height:100%;border-radius:5px;object-fit:cover;display:block;max-width:none}
+.bar{height:8px;border-radius:4px;background:var(--well);overflow:hidden;min-width:80px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.why-off{margin-top:6px;color:var(--warn)} .why-off.ok{color:var(--muted)}
+.match{font-weight:700}.match.ok{color:var(--ok)}.match.off{color:var(--warn)}
+.bench input[type=number]{width:72px;font-family:var(--mono);font-size:13px;background:var(--well);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.bench input.changed{border-color:var(--accent);color:var(--accent)}
+.src{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.src.track{color:var(--ok)} .src.page{color:var(--haste)} .src.run{color:#ffd27a} .src.est{color:var(--warn)} .src.rule{color:var(--tempo)}
+.find{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;width:100%}
+.find input{background:var(--well);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-size:13.5px}
+.find #find-run{flex:1 1 240px;min-width:0}
+.find #find-day{width:72px}
+#find-msg{text-align:right}
+#find-msg code{font-family:var(--mono);user-select:all;background:var(--well);padding:1px 5px;border-radius:5px}
+.luck-verdict{font-size:14.5px;font-weight:600}
+.luck-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.luck-col{background:var(--well);border-radius:10px;padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.luck-col .k{font-family:var(--display);font-size:14px}
+.luck-col .ln{padding-left:10px;border-left:3px solid var(--line, #5a3a22)}
+.luck-col .ln.bad{border-left-color:var(--hp)}
+.luck-col .ln.good{border-left-color:var(--ok)}
+.skpick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;margin-top:6px}
+.skpick select{max-width:100%}
+.note-t{font-size:12.5px;color:var(--muted);max-width:66ch}
+.legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;color:var(--muted)}
+.effects{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.fxcard{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.fxcard.sel{border-color:var(--accent)}
+.fxcard .pic{width:56px;height:56px;border-radius:9px;padding:3px;background:var(--frame)}
+.fxcard .pic.round{border-radius:50%}
+.fxcard .pic img{width:100%;height:100%;border-radius:7px;object-fit:cover;display:block;max-width:none}
+.fxcard .pic.round img{border-radius:50%}
+.fxcard .ttl{font-weight:700}
+.fxcard ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.fxcard li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px;align-items:baseline}
+.st{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.st.yes{color:var(--ok)} .st.partial{color:var(--warn)} .st.no{color:var(--hp)} .st.na{color:var(--muted)}
+.fxcard .why{display:block;color:var(--muted);font-size:12px}
+.sub{font-family:var(--display);font-size:16px;margin-top:6px}
+@media (prefers-reduced-motion:reduce){.card,.hpbar .hp,.hpbar .sh{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1 id="title"></h1>
+      <p>Your run replayed from the exact item stats your tracker recorded, every item's active and passive effects, and your skills. Totals are checked against the fight recap on BazaarHub.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+      <form id="find" class="find" role="search" autocomplete="off">
+        <input id="find-run" type="search" placeholder="BazaarHub run link or id" aria-label="BazaarHub run link or id">
+        <input id="find-day" type="number" min="1" max="30" placeholder="Day" aria-label="Day">
+        <button class="primary" type="submit">Open</button>
+      </form>
+      <div class="note-t" id="find-msg" hidden></div>
+      <div class="seg" role="group" aria-label="Pick a fight" id="fights"></div>
+      <a class="runlink" id="runlink" target="_blank" rel="noopener">Open the run on BazaarHub ↗</a>
+    </div>
+  </header>
+
+  <section class="panel" id="odds" aria-label="Your odds in this fight"></section>
+
+  <section class="arena" id="arena" aria-label="Fight replay">
+    <div class="side opp" id="side1"></div>
+    <div class="mid">
+      <div class="clock" id="clock">0.0s<small>of 0.0s</small></div>
+      <div class="controls">
+        <button class="primary" id="play">Play</button>
+        <button id="restart">Restart</button>
+        <div class="seg" role="group" aria-label="Playback speed" id="speeds"></div>
+      </div>
+      <input class="scrub" id="scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="Fight time">
+    </div>
+    <div class="side me" id="side0"></div>
+    <div class="wibar" id="wibar" hidden><span id="wibar-t"></span><button id="wi-back">Back to the real fight</button></div>
+    <div class="fx" id="fx"><svg class="links" id="links"></svg></div>
+    <div class="banner" id="banner" hidden></div>
+  </section>
+
+  <section class="panel" id="whatif">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
+      <h2>What if</h2>
+      <div class="controls"><button class="primary" id="wi-watch">Watch this what if</button><button id="wi-clear">Clear all</button></div>
+    </div>
+    <div class="note-t">Lock in or take away a piece of luck: crits, which items get hasted, slows and freezes (only where the other side can slow or freeze), and where a freeze lands. See whether you'd still win. Every change re-runs 200 versions of the fight. Raise the opponent's health to turn this into a close fight and see which luck decides it.</div>
+    <div class="wi-res" id="wi-res"></div>
+    <div class="wi-grid">
+      <div class="tablewrap"><table id="wi-items"></table></div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div><b>Opponent health</b> <input type="number" id="wi-hp" step="500" min="500"></div>
+        <div id="wi-stun" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div id="wi-skills"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;margin-top:6px">
+      <div class="sub" style="margin:0">Which luck mattered most</div>
+      <button id="wi-rank">Find out</button>
+    </div>
+    <div class="note-t" id="wi-rank-note">Tries every single change on its own at the opponent health above, and ranks them by how much they move your win chance.</div>
+    <div class="tablewrap"><table id="wi-rank-tab"></table></div>
+  </section>
+
+
+
+  <section class="panel bench" hidden>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
+      <h2>Fix the numbers</h2>
+      <button id="reset">Reset to the original values</button>
+    </div>
+    <div class="tablewrap"><table id="bench"></table></div>
+    <div class="note-t" id="rules"></div>
+  </section>
+</div>
+
+<script>
+const IMG = /*IMG*/{};
+const SKIMG = /*SKIMG*/{};
+/*ENGINE*/
+
+// ---------- Rendering ----------
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const tcls = t => "t-" + String(t || "bronze").toLowerCase();
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let DATA = structuredClone(BASE);
+let SIM, simT = 0, playing = false, speed = 1, lastWall = 0;
+let VIEW = DATA;
+
+
+function badges(it){
+  const b = [];
+  if (it.dmg) b.push(`<span class="badge b-dmg" data-dmg>${fmt(it.dmg)}</span>`);
+  if (it.onEnemyFastest) b.push(`<span class="badge b-dmg">${it.onEnemyFastest.dmg}</span>`);
+  if (it.burn || it.burnBoth) b.push(`<span class="badge b-burn">${it.burn || it.burnBoth}</span>`);
+  if (it.burnOnAdjSlow) b.push(`<span class="badge b-burn">${it.burnOnAdjSlow}</span>`);
+  if (it.shield) b.push(`<span class="badge b-sh">${it.shield}</span>`);
+  if (it.regen || it.onEnemyFastest?.regen) b.push(`<span class="badge b-rg">${it.regen || it.onEnemyFastest.regen}</span>`);
+  if (it.haste) b.push(`<span class="badge b-hst">${it.haste.amt}s</span>`);
+  if (it.slowOnRightCrit) b.push(`<span class="badge b-st">${it.slowOnRightCrit}s</span>`);
+  if (it.crit) b.push(`<span class="badge b-cr">${it.crit}%</span>`);
+  return b.join("");
+}
+function buildSides(){
+  VIEW.sides.forEach((p, si) => {
+    const used = p.items.reduce((a, it) => a + it.size, 0), empties = Math.max(0, 10 - used);
+    $("side"+si).innerHTML = `
+      <div class="who">
+        <div><div class="name">${p.name}</div><div class="hero">${p.hero}</div></div>
+        <div class="bars">
+          <div class="hpbar" id="bar${si}"><div class="hp" id="hp${si}"></div><div class="sh" id="sh${si}"></div><div class="lbl" id="hpl${si}"></div></div>
+          <div class="status" id="st${si}"></div>
+        </div>
+      </div>
+      <div class="skwrap">${(p.skills||[]).length ? `<div class="skills">${p.skills.map((s, k) => `<div class="skill ${tcls(s.tier)} ${s.kind==="none"?"dim":""}" id="sk${si}_${k}" title="${s.name} (${s.tier}): ${s.text}"><img src="${SKIMG[s.slug]||""}" alt="${s.name}"><span class="n" id="skn${si}_${k}" hidden></span></div>`).join("")}</div>` : `<div class="note-t">${p.name}'s skills aren't in the tracker data.</div>`}${stunPick(p, si)}</div>
+      <div class="board-scroll"><div class="board">
+        ${p.items.map((it, ii) => `
+          <div class="card ${tcls(it.tier)}" id="c${si}_${ii}" tabindex="0" role="button" aria-label="${it.name} details" data-si="${si}" data-ii="${ii}" style="grid-column:span ${it.size}">
+            <div class="art">
+              <img src="${IMG[it.slug]||""}" alt="">
+              <div class="recap" id="rc${si}_${ii}" hidden></div>
+              <span class="uses" id="uc${si}_${ii}" hidden></span>
+              <div class="cdveil" id="v${si}_${ii}" style="height:${it.cd>0?100:0}%"></div>
+              ${it.cd>0 ? `<div class="cdline" id="l${si}_${ii}" style="top:100%"></div>` : ""}
+              <div class="top"><span style="display:flex;gap:3px;flex-wrap:wrap" id="bd${si}_${ii}">${badges(it)}<span class="badge b-hst" id="h${si}_${ii}" hidden></span></span>${(it.multicast||1) > 1 ? `<span class="badge b-mc">x${it.multicast}</span>` : ""}</div>
+              <div class="foot">${it.ench ? `<span class="ench e-${it.ench.toLowerCase()}">${it.ench}</span>` : ""}<div class="row"><span class="nm">${it.name}</span><span class="cd" id="cdt${si}_${ii}">${it.cd>0 ? it.cd+"s" : "passive"}</span></div></div>
+            </div>
+          </div>`).join("")}
+        ${empties ? `<div class="card empty" style="grid-column:span ${empties}">Empty</div>` : ""}
+      </div></div>`;
+  });
+  document.querySelectorAll(".card[data-si]").forEach(c => {
+    const go = () => { const el = $(`fx_${c.dataset.si}_${c.dataset.ii}`); document.querySelectorAll(".fxcard").forEach(x => x.classList.remove("sel")); if (el){ el.classList.add("sel"); el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block:"nearest" }); } };
+    c.addEventListener("click", go); c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); } });
+  });
+}
+const ST = { yes:"Modelled", partial:"Adjusted", no:"Not yet", "n/a":"Not in fights" };
+function buildEffects(){
+  if (!$("effects")) return; // section removed at Aswad's request; the item text stays in the data
+  $("effects").innerHTML = VIEW.sides.flatMap((p, si) => p.items.map((it, ii) => `
+    <div class="fxcard" id="fx_${si}_${ii}">
+      <div class="pic ${tcls(it.tier)}"><img src="${IMG[it.slug]||""}" alt="${it.name}"></div>
+      <div style="min-width:0"><div class="ttl">${it.ench ? it.ench + " " : ""}${it.name}</div><div class="muted" style="font-size:12px">${p.name} · ${it.tier}${it.tierSrc==="est"?" (guess)":""} · ${["","Small","Medium","Large"][it.size]}${it.tags.length ? " · " + it.tags.join(", ") : ""}</div>
+        <ul>${it.text.map(([line, st, why]) => `<li><span class="st ${st==="n/a"?"na":st}">${ST[st]}</span><span>${line}${why ? `<span class="why">${why}</span>` : ""}</span></li>`).join("")}</ul>
+      </div>
+    </div>`)).join("");
+  $("skillfx").innerHTML = VIEW.sides.map((p, si) => !(p.skills||[]).length ? "" : `<div class="sub">${si ? p.name + "'s skills" : "Your skills"}</div><div class="effects">` + p.skills.map(s => `
+    <div class="fxcard">
+      <div class="pic round ${tcls(s.tier)}"><img src="${SKIMG[s.slug]||""}" alt="${s.name}"></div>
+      <div style="min-width:0"><div class="ttl">${s.name}</div><div class="muted" style="font-size:12px">${s.tier} skill</div>
+        <ul><li><span class="st ${s.m==="n/a"?"na":s.m}">${ST[s.m]}</span><span>${s.text}${s.why ? `<span class="why">${s.why}</span>` : ""}</span></li></ul>
+      </div>
+    </div>`).join("") + "</div>").join("");
+}
+
+function itemTotals(upTo){
+  const T = VIEW.sides.map(p => p.items.map(() => ({ uses:0, casts:0, dmg:0, burn:0, shield:0, heal:0, regen:0, haste:0, slow:0, charge:0, crit:0, gotFreeze:0, gotSlow:0, gotHaste:0, gotCharge:0 })));
+  const R1 = v => Math.round(v*10)/10;
+  for (const e of SIM.events){
+    if (e.t > upTo + 1e-6) break;
+    // What this item had done to it: freezes and slows from the foe, hastes and charges from its own side
+    const tg = (si, j) => T[si] && T[si][j];
+    if (e.kind === "freeze" && tg(e.on, e.target)) tg(e.on, e.target).gotFreeze = R1(tg(e.on, e.target).gotFreeze + (VIEW.sides[e.on].items[e.target].flying ? e.amt/2 : e.amt));
+    if (e.kind === "slow" && tg(e.on, e.target)) tg(e.on, e.target).gotSlow = R1(tg(e.on, e.target).gotSlow + e.amt);
+    if (e.kind === "haste" && tg(e.si, e.target)) tg(e.si, e.target).gotHaste = R1(tg(e.si, e.target).gotHaste + e.amt);
+    if (e.kind === "charge" && e.ii !== e.target && tg(e.si, e.target)) tg(e.si, e.target).gotCharge = R1(tg(e.si, e.target).gotCharge + e.amt);
+    if (e.si < 0 || e.ii < 0 || !T[e.si] || !T[e.si][e.ii]) continue;
+    const x = T[e.si][e.ii];
+    if (e.kind === "use") x.uses++;
+    else if (e.kind === "roll"){ if (e.crit) x.crit++; }
+    else if (e.kind === "dmg"){ x.dmg += e.amt; x.casts++; }
+    else if (e.kind === "burn" && !e.self) x.burn += e.amt;
+    else if (e.kind === "shield") x.shield += e.amt;
+    else if (e.kind === "heal") x.heal += e.amt;
+    else if (e.kind === "regen") x.regen += e.amt;
+    else if (e.kind === "haste") x.haste++;
+    else if (e.kind === "slow") x.slow++;
+    else if (e.kind === "charge" && e.ii !== e.target) x.charge++;
+  }
+  return T;
+}
+function frameAt(t){ return SIM.frames[Math.min(SIM.frames.length-1, Math.max(0, Math.round(t/VIEW.dt)))]; }
+function draw(){
+  const f = frameAt(simT);
+  f.forEach((s, si) => {
+    const max = VIEW.sides[si].hp;
+    $("hp"+si).style.width = (100*s.hp/max)+"%";
+    $("sh"+si).style.width = Math.min(100, 100*s.sh/max)+"%";
+    $("hpl"+si).textContent = `${fmt(s.hp)} / ${fmt(max)}` + (s.sh>0 ? `  +${fmt(s.sh)} shield` : "");
+    $("st"+si).innerHTML = [ s.burn>=1 ? `<span class="chip burn">Burn ${fmt(s.burn)}</span>` : "", s.regen>0 ? `<span class="chip regen">Regen ${fmt(s.regen)}/s</span>` : "", s.tempo>0 ? `<span class="chip tempo">Tempo ${s.tempo}</span>` : "" ].join("");
+    s.items.forEach((it, ii) => {
+      const item = VIEW.sides[si].items[ii], card = $(`c${si}_${ii}`);
+      if (item.cd > 0 && it.cd !== item.cd) $(`cdt${si}_${ii}`).textContent = it.cd + "s";
+      if (item.cd > 0){ $(`v${si}_${ii}`).style.height = ((1-it.c)*100)+"%"; $(`l${si}_${ii}`).style.top = ((1-it.c)*100)+"%"; }
+      card.classList.toggle("hasted", it.h); card.classList.toggle("slowed", it.sl); card.classList.toggle("frozen", it.fr);
+      const hb = $(`h${si}_${ii}`); hb.hidden = !it.h; if (it.h) hb.textContent = "haste " + it.hl.toFixed(1) + "s";
+      if (it.d !== null){ const d = card.querySelector("[data-dmg]"); if (d) d.textContent = fmt(it.d); }
+    });
+  });
+  // what each item has done so far: a use counter while it plays, the full recap on each card at the end
+  const done = simT >= SIM.end.t - 1e-6, tot = itemTotals(simT);
+  VIEW.sides.forEach((p, si) => p.items.forEach((it, ii) => {
+    const T = tot[si][ii], uc = $(`uc${si}_${ii}`), rc = $(`rc${si}_${ii}`); if (!uc) return;
+    uc.hidden = !T.uses || done; uc.textContent = "×" + T.uses;
+    rc.hidden = !done; $(`c${si}_${ii}`).classList.toggle("done", done);
+    const nf = v => it.size === 1 && v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1) + "k" : fmt(v);
+    if (done){
+      const rows = [["dmg","Damage","var(--hp)"],["burn","Burn","var(--burn)"],["shield","Shield","var(--shield)"],["heal","Heal","var(--heal)"],["regen","Regen","var(--regen)"],["haste","Hastes","var(--haste)"],["slow","Slows","var(--slow)"],["charge","Charges","var(--charge)"],["crit","Crits","var(--accent)"],
+        ["gotHaste","Hasted","var(--haste)","s"],["gotSlow","Slowed","var(--slow)","s"],["gotFreeze","Frozen","var(--freeze)","s"],["gotCharge","Charged","var(--charge)","s"]]
+        .filter(([k]) => T[k]).map(([k, l, c, u]) => `<div><span style="color:${c}">${it.size === 1 ? ({ Damage:"Dmg", Shield:"Shld", Hastes:"Haste", Slows:"Slow", Charges:"Chg", Charged:"Chgd" }[l] || l) : l}</span> <b>${u ? T[k] + u : nf(T[k])}</b></div>`);
+      rc.innerHTML = `<div class="nm">${it.ench ? it.ench + " " : ""}${it.name}</div>` + rows.join("") + `<div class="muted">${T.uses ? `Used ${T.uses}×${T.casts > T.uses ? (it.size === 1 ? `</div><div class="muted">${T.casts} hits` : ` · ${T.casts} hits`) : ""}` : it.cd > 0 ? "Never used" : T.casts ? `Fired ${T.casts}×` : "Passive"}</div>`;
+    }
+  }));
+  // skill trigger counts up to now
+  VIEW.sides.forEach((p, si) => (p.skills||[]).forEach((s, k) => {
+    const n = SIM.events.filter(e => e.kind === "skill" && e.si === si && e.skill === k && e.t <= simT + 1e-6).length;
+    const el = $(`skn${si}_${k}`); if (el){ el.hidden = !n; el.textContent = n; }
+  }));
+  $("arena").classList.toggle("sandstorm", simT > VIEW.sandstormAt);
+  $("clock").innerHTML = `${simT.toFixed(1)}s<small>of ${SIM.end.t.toFixed(1)}s</small>`;
+  $("scrub").value = Math.round(1000*simT/SIM.end.t);
+  $("banner").hidden = !done;
+  if (done){
+    const w = SIM.end.winner;
+    $("banner").className = "banner " + (w===0 ? "win" : "lose");
+    $("banner").innerHTML = `<div class="big">${w===0 ? "Victory" : w===1 ? "Defeat" : "Draw"}</div>
+      <div>${(w===0 ? VIEW.sides[1].name : VIEW.sides[0].name)} fell at ${SIM.end.t.toFixed(2)}s${SIM.end.timeout ? " (time limit)" : ""}.
+      ${VIEW !== DATA ? "This is a what-if fight." : w===BASE.winner ? "Matches the real result." : "The real fight went the other way, so a number is off."}</div>
+      <div><button id="again">Watch again</button></div>`;
+    $("again").onclick = () => { simT = 0; play(true); };
+  }
+}
+
+// ---------- Animations ----------
+function center(el){ const a = $("arena").getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - a.left + r.width/2, y: r.top - a.top + r.height/2, w:r.width, h:r.height }; }
+function spawn(cls, x, y, html){ const d = document.createElement("div"); d.className = cls; d.style.left = x+"px"; d.style.top = y+"px"; if (html !== undefined) d.innerHTML = html; $("fx").appendChild(d); return d; }
+function fly(el, from, to, ms, arc){
+  const mx = (from.x+to.x)/2 + (arc||0), my = (from.y+to.y)/2;
+  const a = el.animate([{ transform:"translate(0,0)" },{ transform:`translate(${mx-from.x}px,${my-from.y}px)`, offset:.5 },{ transform:`translate(${to.x-from.x}px,${to.y-from.y}px)` }], { duration: ms/Math.max(.5,speed), easing:"ease-in" });
+  a.onfinish = () => el.remove(); return a;
+}
+function floater(x, y, text, color, size){
+  const f = spawn("floater" + (size ? " " + size : ""), x, y, text); f.style.color = color;
+  f.animate([{ opacity:0, transform:"translate(-50%,-30%) scale(.7)" },{ opacity:1, transform:"translate(-50%,-60%) scale(1.15)", offset:.15 },{ opacity:0, transform:"translate(-50%,-180%) scale(1)" }], { duration:1100, easing:"ease-out" }).onfinish = () => f.remove();
+}
+function ring(x, y, size, color, ms){ const r = spawn("ring", x, y); r.style.borderColor = color; r.animate([{ width:"10px", height:"10px", opacity:1 },{ width:size+"px", height:size+"px", opacity:0 }], { duration:ms||500, easing:"ease-out" }).onfinish = () => r.remove(); }
+function shake(el, px){ el.animate([{transform:"translate(0,0)"},{transform:`translate(${-px}px,${px/2}px)`},{transform:`translate(${px}px,${-px/2}px)`},{transform:"translate(0,0)"}], { duration:220 }); }
+function fire(card, si){
+  card.classList.add("fire"); setTimeout(() => card.classList.remove("fire"), 300);
+  const dir = si === 0 ? -1 : 1;
+  card.animate([{ transform:"translateY(0) scale(1)" },{ transform:`translateY(${dir*14}px) scale(1.06)`, offset:.35 },{ transform:"translateY(0) scale(1)" }], { duration:320, easing:"ease-out" });
+}
+function orbTo(cls, fromEl, toEl, ms, arc, done, jitter){
+  const from = center(fromEl), to0 = center(toEl), to = { ...to0, x: to0.x + (jitter ? (Math.random()-.5)*Math.min(200, to0.w*.5) : 0) };
+  const o = spawn("orb " + cls, from.x, from.y); const a = fly(o, from, to, ms, arc); if (done) a.addEventListener("finish", () => done(to)); return a;
+}
+function pulseSkill(si, k, text){
+  const el = $(`sk${si}_${k}`); if (!el) return;
+  el.animate([{ transform:"scale(1)", boxShadow:"0 0 0 0 rgba(232,163,60,0)" },{ transform:"scale(1.35)", boxShadow:"0 0 18px 6px rgba(232,163,60,.8)", offset:.3 },{ transform:"scale(1)", boxShadow:"0 0 0 0 rgba(232,163,60,0)" }], { duration:600 });
+  if (text){ const c = center(el); floater(c.x, c.y - 26, text, "var(--accent)", "small"); }
+}
+function animateEvent(e){
+  const card = e.ii >= 0 && e.si >= 0 ? $(`c${e.si}_${e.ii}`) : null;
+  const foe = 1 - e.si;
+  if (e.kind === "skill"){ const sk = VIEW.sides[e.si].skills[e.skill]; pulseSkill(e.si, e.skill, sk.kind === "conflag" ? "" : sk.name + ": " + e.text); return; }
+  if (reduced && !["dmg","burntick"].includes(e.kind)) return;
+  if ((e.kind === "use" || e.kind === "fire") && card){ fire(card, e.si); return; }
+  if (e.kind === "dmg" && card){
+    const big = e.amt >= 400, bar = $("bar"+foe);
+    if (e.anim === "carpet") card.animate([{ transform:"translateY(0)" },{ transform:`translateY(${e.si===0?-26:26}px) rotate(-3deg)`, offset:.4 },{ transform:"translateY(0)" }], { duration:420 });
+    orbTo(e.anim === "squid" || e.anim === "worm" ? "ink" : e.crit ? "crit" : "dmg", card, bar, big ? 420 : 360, e.anim === "carpet" ? -80 : 0, to => {
+      floater(to.x, to.y - 6, (e.crit ? "CRIT " : "") + "-" + fmt(e.amt), e.crit ? "#ffe066" : "var(--hp)", big ? "big" : "");
+      ring(to.x, to.y, big ? 130 : 70, e.crit ? "#ffe066" : "var(--hp)", 420);
+      if (e.crit){ const s = spawn("slash", to.x - 45, to.y); s.animate([{ transform:"rotate(-30deg) scaleX(.2)", opacity:1 },{ transform:"rotate(-30deg) scaleX(1.2)", opacity:0 }], { duration:300 }).onfinish = () => s.remove(); }
+      shake(bar, big ? 7 : 3);
+    }, true);
+    return;
+  }
+  if (e.kind === "heal"){ const to = center($("bar"+e.si)); floater(to.x - to.w*.25 + (Math.random()-.5)*60, to.y + 4, "+" + fmt(e.amt), "var(--heal)", "small"); return; }
+  if (e.kind === "burn"){
+    const target = $("bar"+e.on);
+    if (card && !e.self) orbTo("burn", card, target, 420, -50, to => floater(to.x + 40, to.y + 16, "+" + Math.round(e.amt) + " burn", "var(--burn)", "small"));
+    else { const to = center(target); floater(to.x + 60, to.y + 16, "+" + Math.round(e.amt) + " burn", "var(--burn)", "small"); }
+    return;
+  }
+  if (e.kind === "burntick"){ const to = center($("bar"+e.on)); floater(to.x + to.w*.32, to.y, "-" + fmt(e.amt), "var(--burn)", "small"); return; }
+  if (e.kind === "regentick"){ const to = center($("bar"+e.on)); floater(to.x - to.w*.32, to.y, "+" + fmt(e.amt), "var(--regen)", "small"); return; }
+  if (e.kind === "regen" && card){ const to = center($("bar"+e.si)); floater(to.x - 60, to.y + 16, "+" + e.amt + " regen", "var(--regen)", "small"); return; }
+  if (e.kind === "haste" && card){ const tc = $(`c${e.si}_${e.target}`); if (tc) orbTo("haste", card, tc, 380, 0, to => { ring(to.x, to.y, 120, "var(--haste)", 500); floater(to.x, to.y, "Haste " + e.amt + "s", "var(--haste)", "small"); }); return; }
+  if (e.kind === "charge"){
+    const tc = $(`c${e.si}_${e.target}`); if (!tc) return;
+    const done = to => { ring(to.x, to.y, 90, "var(--charge)", 420); floater(to.x, to.y + 18, "+" + e.amt + "s", "var(--charge)", "small"); };
+    if (card && e.ii !== e.target) orbTo("charge", card, tc, 320, 0, done); else done(center(tc));
+    return;
+  }
+  if (e.kind === "slow" && card){ const tc = $(`c${e.on}_${e.target}`); if (tc) orbTo("slow", card, tc, 400, 40, to => { ring(to.x, to.y, 110, "var(--slow)", 500); floater(to.x, to.y, "Slow " + e.amt + "s", "var(--slow)", "small"); }); return; }
+  if (e.kind === "freeze"){ const tc = $(`c${e.on}_${e.target}`); if (tc){ const to = center(tc); ring(to.x, to.y, 140, "var(--freeze)", 600); floater(to.x, to.y, "Freeze " + e.amt + "s", "var(--freeze)"); } return; }
+  if (e.kind === "double" && card){ const tc = $(`c${e.si}_${e.target}`); if (tc){ const c = center(tc); ring(c.x, c.y, 150, "var(--accent)", 600); floater(c.x, c.y, "Damage ×2", "var(--accent)"); } return; }
+  if (e.kind === "cdcut" && card){ const c = center(card); floater(c.x, c.y + 30, "CD " + e.amt + "s", "var(--charge)", "small"); return; }
+  if (e.kind === "shield" && card){
+    const to = center($("bar"+e.si));
+    const d = spawn("dome", to.x - to.w/2 - 6, to.y - to.h/2 - 6); d.style.width = (to.w + 12) + "px"; d.style.height = (to.h + 12) + "px";
+    d.animate([{ opacity:0, transform:"scale(.96)" },{ opacity:1, transform:"scale(1.02)", offset:.3 },{ opacity:0, transform:"scale(1)" }], { duration:700 }).onfinish = () => d.remove();
+    floater(to.x, to.y - 18, "+" + fmt(e.amt) + " shield", "var(--shield)");
+    return;
+  }
+}
+function popEvents(from, to){ for (const e of SIM.events){ if (e.t > from && e.t <= to) animateEvent(e); } }
+
+const LBL = { dmg:"damage", heal:"healed", tempo:"tempo gained", tempoSpent:"tempo spent", burn:"burn applied", regen:"regen", shield:"shield", uses:"uses", casts:"hits", haste:"hastes", slow:"slows" };
+let FIT = null;
+function happened(st){
+  const p = [];
+  if (st.gotCharge) p.push(`charged ${+st.gotCharge.toFixed(1)}s`);
+  if (st.gotHaste) p.push(`hasted ${+st.gotHaste.toFixed(1)}s`);
+  if (st.gotSlow) p.push(`<span style="color:var(--slow)">slowed ${+st.gotSlow.toFixed(1)}s</span>`);
+  if (st.gotFreeze) p.push(`<span style="color:var(--freeze)">frozen ${+st.gotFreeze.toFixed(1)}s</span>`);
+  if (st.cdCut) p.push(`cooldown cut ${st.cdCut}s`);
+  if (st.crit) p.push(`${st.crit} crits`);
+  return p.join(" · ") || "nothing";
+}
+function buildCompare(){
+  if (!$("compare")) return; // section removed at Aswad's request; the fit still picks the replay's rolls
+  const rows = [];
+  DATA.sides.forEach((p, si) => p.items.forEach((it, ii) => {
+    const real = BASE.sides[si].items[ii].real; if (!real) return;
+    const st = SIM.stats[si][ii], dist = FIT.dist[si][ii];
+    const cells = Object.entries(real).map(([k, v]) => { const mine = st[k] ?? 0; return { k, label: LBL[k] || k, v, mine, close: Math.abs(mine - v) <= Math.max(0.5, v*0.08), d: dist[k] }; });
+    const offs = cells.filter(c => !c.close);
+    let why = "";
+    if (offs.length){
+      const rare = offs.filter(c => c.d.hit < 0.05);
+      why = rare.length
+        ? `<div class="why-off">Almost no possible fight reaches the real ${rare.map(c => c.label).join(" and ")}, so a number or rule for this item is probably wrong.</div>`
+        : `<div class="why-off ok">Luck of this fight: ${Math.round(Math.min(...offs.map(c => c.d.hit))*100)}% of possible fights match. It depends on which items got charged, slowed or frozen.</div>`;
+    }
+    cells.forEach((c, k) => rows.push(`<tr>${k===0 ? `<td rowspan="${cells.length}">${it.ench ? it.ench + " " : ""}${it.name}<div class="muted" style="font-size:12px">${p.name}</div></td>` : ""}
+      <td>${c.label}</td><td class="num">${fmt(c.v)}</td><td class="num">${fmt(c.mine)} <span class="match ${c.close?"ok":"off"}">${c.close ? "✓" : (c.mine > c.v ? "+" : "") + fmt(c.mine - c.v)}</span></td>
+      <td class="num">${fmt(c.d.min)}–${fmt(c.d.max)}</td><td class="num">${Math.round(c.d.hit*100)}%</td>
+      ${k===0 ? `<td rowspan="${cells.length}" style="font-size:12.5px">${happened(st)}${why}</td>` : ""}</tr>`));
+  }));
+  const ok = BASE.winner === SIM.end.winner;
+  $("compare").innerHTML = `<thead><tr><th>Item</th><th>Stat</th><th>Real</th><th>This fight</th><th>Possible range</th><th>Fights that match</th><th>What happened to it here</th></tr></thead><tbody>${rows.join("")}
+    <tr><td>Result</td><td>winner</td><td>${DATA.sides[BASE.winner].name}</td><td>${SIM.end.winner>=0 ? DATA.sides[SIM.end.winner].name : "draw"} <span class="match ${ok?"ok":"off"}">${ok?"✓":"off"}</span></td><td></td><td class="num">${Math.round(FIT.wins*100)}%</td><td></td></tr></tbody>`;
+  const pct = n => Math.round(100*n/FIT.N) + "%";
+  $("skilltab").innerHTML = `<thead><tr><th>Skill</th><th>Fires here</th><th>Possible range</th><th>What it did here</th><th>Across all ${FIT.N} fights</th></tr></thead><tbody>` +
+    DATA.sides.map((p, si) => (p.skills||[]).map((sk, k) => ({ sk, k })).filter(({ sk }) => ACTIVE_SKILL(sk)).map(({ sk, k }, n) => {
+      const here = SIM.skillStats[si][k], d = FIT.skillDist[si][k];
+      const did = Object.entries(here.did).map(([t, n]) => n > 1 ? `${t} ×${n}` : t).join("<br>") || "nothing";
+      const across = Object.entries(d.outcomes).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t, n]) => `${t.replace(/ #s\b/g, "").replace(/#/g, "N")}: ${pct(n)}`).join("<br>");
+      return `<tr><td><div style="display:flex;gap:8px;align-items:center"><div class="skill ${tcls(sk.tier)}" style="width:30px;height:30px"><img src="${SKIMG[sk.slug]||""}" alt=""></div><div>${sk.name}<div class="muted" style="font-size:12px">${sk.tier}</div></div></div></td>
+        <td class="num">${here.triggers}</td><td class="num">${d.min === d.max ? d.min : d.min + "–" + d.max}</td><td style="font-size:12.5px">${did}</td><td style="font-size:12.5px" class="muted">${across}</td></tr>`;
+    }).map((row, n) => n === 0 ? `<tr><td colspan="5" style="padding-top:10px"><b>${si ? p.name + "'s skills" : "Your skills"}</b></td></tr>` + row : row).join("")).join("") + "</tbody>";
+  $("staticskills").innerHTML = DATA.sides.map((p, si) => {
+    const sk = p.skills || [], stat = sk.filter(x => x.kind === "static").map(x => x.name), none = sk.filter(x => x.kind === "none").map(x => x.name);
+    if (!stat.length && !none.length) return "";
+    return `<div><b>${si ? p.name : "You"}:</b> ` + (stat.length ? `always on: ${stat.join(", ")}, already in the item numbers. ` : "") + (none.length ? `No effect in this fight: ${none.join(", ")}.` : "") + `</div>`;
+  }).join("");
+  const rank = FIT.runs.findIndex(r => r.seed === DATA.seed) + 1;
+  $("fitnote").innerHTML = `Crits under 100% and every random target (which item gets charged, hasted, slowed or frozen) change how a fight plays out. I ran ${FIT.N} possible versions of this fight. ${rank === 1 ? "This replay is the one closest to your recap." : `This replay is number ${rank} of ${FIT.N} for closeness to your recap.`} You win ${Math.round((BASE.winner === 0 ? FIT.wins : 1 - FIT.wins)*100)}% of them. A row marked as luck can match with different rolls; a row almost no fight matches points to a wrong number or a missing rule.`;
+}
+
+const FIELDS = [["cd","Cooldown (s)","cdSrc",0.1],["dmg","Damage","dmgSrc",1],["crit","Crit %","critSrc",1],["multicast","Multicast","mcSrc",1],["burn","Burn","burnSrc",1],["burnBoth","Burn both","burnSrc",1],["regen","Regen","regenSrc",1],["shield","Shield","shieldSrc",1]];
+const SRC = { track:"Your tracker", run:"Fight recap", page:"Item page", est:"Estimated", rule:"Your notes" };
+function srcTag(s){ return ""; } // source tags removed at Aswad's request
+function buildBench(){
+  let h = `<thead><tr><th>Item</th>${FIELDS.map(f=>`<th>${f[1]}</th>`).join("")}</tr></thead><tbody>`;
+  DATA.sides.forEach((p, si) => {
+    h += `<tr><td colspan="${FIELDS.length+1}" style="padding-top:14px"><b>${p.name}</b> · Max health <input type="number" id="hp_${si}" data-si="${si}" data-k="hp" value="${p.hp}" step="50"> ${srcTag(p.hpSrc)}</td></tr>`;
+    p.items.forEach((it, ii) => {
+      h += `<tr><td>${it.ench ? it.ench + " " : ""}${it.name}</td>${FIELDS.map(([k,,src,step]) => {
+        if (it[k] === undefined || (k === "cd" && !(it.cd > 0))) return `<td class="muted">–</td>`;
+        return `<td><input type="number" id="in_${si}_${ii}_${k}" data-si="${si}" data-ii="${ii}" data-k="${k}" value="${it[k]}" step="${step}" min="0"><div>${srcTag(it[src])}</div></td>`;
+      }).join("")}</tr>`;
+    });
+  });
+  $("bench").innerHTML = h + "</tbody>";
+  $("bench").querySelectorAll("input").forEach(inp => inp.addEventListener("change", () => {
+    const si = +inp.dataset.si, k = inp.dataset.k, v = parseFloat(inp.value);
+    if (!isFinite(v) || v < 0) return;
+    let baseV;
+    if (inp.dataset.ii !== undefined){ const ii = +inp.dataset.ii; DATA.sides[si].items[ii][k] = v; baseV = BASE.sides[si].items[ii][k]; }
+    else { DATA.sides[si][k] = v; baseV = BASE.sides[si][k]; }
+    inp.classList.toggle("changed", v !== baseV);
+    VIEW = DATA; $("wibar").hidden = true;
+    rerun(true, true); if (k === "hp" && si === 1) WI.hp = v; buildWhatIf(); runWhatIf();
+  }));
+  $("rules").innerHTML = `<b>Rules used, from your mechanics notes:</b> crits double damage, burn and shield. Haste doubles charge speed, slow halves it, freeze stops it, and charge doesn't overflow. Multicast hits land 0.25s apart. Burn ticks every 0.5s and drops 3% a tick, Shield takes Burn at half, Regen ticks every second. Lifesteal heals for the damage dealt. The sandstorm starts at 45s.
+    <br><b>Estimated:</b> ${BASE.notes}
+    <br><b>Random rolls:</b> each possible fight uses its own fixed set of rolls, so the same fight always replays the same way.`;
+}
+
+function rerun(keepTime, refit){
+  VIEW = DATA; const wb = $("wibar"); if (wb) wb.hidden = true;
+  if (refit || !FIT){ FIT = fitSeeds(DATA, 300); DATA.seed = !refit && typeof SUMMARY !== "undefined" && SUMMARY[BASE.key] ? SUMMARY[BASE.key].real : FIT.best.seed; } // same replay the odds box reads
+  SIM = simulate(DATA);
+  buildSides(); buildCompare();
+  simT = keepTime ? Math.min(simT, SIM.end.t) : 0;
+  draw();
+}
+
+// ---------- Controls ----------
+const SPEEDS = [0.25, 0.5, 1, 2];
+$("speeds").innerHTML = SPEEDS.map(s => `<button aria-pressed="${s===speed}" data-s="${s}">${s}x</button>`).join("");
+$("speeds").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; speed = +b.dataset.s; $("speeds").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x===b)); });
+function play(on){
+  playing = on;
+  if (on && simT >= SIM.end.t - 1e-6) simT = 0;
+  $("play").textContent = on ? "Pause" : "Play";
+  lastWall = performance.now();
+  if (on){ draw(); requestAnimationFrame(tick); }
+}
+function tick(now){
+  if (!playing) return;
+  const prev = simT;
+  simT = Math.min(SIM.end.t, simT + (now - lastWall)/1000*speed);
+  lastWall = now;
+  popEvents(prev, simT);
+  draw();
+  if (simT >= SIM.end.t){ play(false); return; }
+  requestAnimationFrame(tick);
+}
+$("play").onclick = () => play(!playing);
+$("restart").onclick = () => { simT = 0; draw(); play(true); };
+$("scrub").addEventListener("input", e => { play(false); simT = SIM.end.t * (+e.target.value)/1000; draw(); });
+$("reset").onclick = () => { DATA = structuredClone(BASE); VIEW = DATA; $("wibar").hidden = true; buildBench(); buildEffects(); rerun(false, true); WI.hp = DATA.sides[1].hp; buildWhatIf(); runWhatIf(); };
+if ($("another")) $("another").onclick = () => { const pool = FIT.runs.filter(r => r.win === (BASE.winner === 0)).slice(1, 60); const r = pool[Math.floor(Math.random()*pool.length)] || FIT.runs[1]; DATA.seed = r.seed; play(false); rerun(false); simT = 0; draw(); play(true); };
+if ($("bestbtn")) $("bestbtn").onclick = () => { DATA.seed = FIT.best.seed; play(false); rerun(false); simT = 0; draw(); play(true); };
+
+
+// ---------- What if ----------
+const WI = { ov:{}, skillOff:{}, hp:null, stunAt:{} };
+let WI_BASE = null, WI_RES = null;
+const ACTIVE_SKILL = sk => sk.kind !== "static" && sk.kind !== "none";
+// Skills whose effect has a random part (random target or a crit-based trigger): the only ones the What if panel can switch off
+const RANDOM_SKILL = sk => ["flurry", "stun", "trained"].includes(sk.kind);
+// Can this side slow or freeze anything? If not, the other side's slow and freeze options are left out.
+const HASTES = p => p.items.some(it => it.haste);
+const RAND_HASTE = p => p.items.some(it => it.haste && (it.haste.mode === "random" || it.haste.mode === "friendAndOther"));
+const CONTROLS = p => p.items.some(it => it.slowOnRightCrit) || (p.skills||[]).some(sk => sk.kind === "stun");
+function wiData(extra){
+  const D = structuredClone(DATA);
+  D.ov = structuredClone(WI.ov); D.skillOff = { ...WI.skillOff }; D.stunAt = { ...WI.stunAt };
+  D.sides[1].hp = WI.hp ?? DATA.sides[1].hp;
+  if (extra) extra(D);
+  return D;
+}
+function wiLabel(){
+  const parts = [];
+  Object.entries(WI.ov).forEach(([key, o]) => { const [si, ii] = key.split("_").map(Number), it = DATA.sides[si].items[ii], nm = (it.ench ? it.ench + " " : "") + it.name + (si ? " (theirs)" : "");
+    if (o.crit) parts.push(`${nm} ${o.crit === "always" ? "always crits" : "never crits"}`);
+    if (o.noHaste) parts.push(`${nm} never hasted`);
+    if (o.hasteMagnet) parts.push(`${nm} gets every random haste`);
+    if (o.missRandHaste) parts.push(`${nm} misses every random haste`);
+    if (o.immune) parts.push(`${nm} never slowed or frozen`);
+    if (o.startFreeze) parts.push(`${nm} frozen ${o.startFreeze}s at the start`); });
+  Object.entries(WI.stunAt).forEach(([si, j]) => { const foe = DATA.sides[1 - si]; parts.push(`${+si ? DATA.sides[1].name + "'s" : "your"} freeze hits ${+si ? "your " : ""}${foe.items[j].name}`); });
+  Object.keys(WI.skillOff).forEach(key => { const [si, k] = key.split("_").map(Number); parts.push(`no ${DATA.sides[si].skills[k].name}`); });
+  if (WI.hp !== null && WI.hp !== DATA.sides[1].hp) parts.push(`opponent at ${fmt(WI.hp)} health`);
+  return parts.join(", ");
+}
+function buildWhatIf(){
+  if (WI.hp === null) WI.hp = DATA.sides[1].hp;
+  $("wi-hp").value = WI.hp;
+  const rows = [];
+  DATA.sides.forEach((p, si) => {
+    rows.push(`<tr><td colspan="4" style="padding-top:10px"><b>${si ? "Their items" : "Your items"}</b></td></tr>`);
+    p.items.forEach((it, ii) => {
+      const canCtl = it.cd > 0 && CONTROLS(DATA.sides[1 - si]);
+      const canHaste = it.cd > 0 && HASTES(p);
+      if (!canCtl && !canHaste && it.crit === undefined) return;
+      const key = si + "_" + ii, o = WI.ov[key] || {};
+      const critSel = it.crit !== undefined ? `<select id="wc_${key}" data-key="${key}" data-f="crit" class="${o.crit ? "set" : ""}" aria-label="${it.name} crits">
+        <option value="">Rolled (${it.crit}%${p.items.some(x => x.critAura) ? ", rising" : ""})</option><option value="always" ${o.crit==="always"?"selected":""}>Always crits</option><option value="never" ${o.crit==="never"?"selected":""}>Never crits</option></select>` : `<span class="muted">–</span>`;
+      const ctl = canCtl ? `<select id="wf_${key}" data-key="${key}" data-f="ctl" class="${o.immune ? "set" : ""}" aria-label="${it.name} slow and freeze">
+        <option value="">Normal</option><option value="immune" ${o.immune?"selected":""}>Never slowed or frozen</option></select>` : `<span class="muted">–</span>`;
+      const hst = canHaste ? `<select id="wh_${key}" data-key="${key}" data-f="haste" class="${o.noHaste || o.hasteMagnet || o.missRandHaste ? "set" : ""}" aria-label="${it.name} haste">
+        <option value="">Normal</option><option value="none" ${o.noHaste?"selected":""}>Never hasted</option>${RAND_HASTE(p) ? `<option value="magnet" ${o.hasteMagnet?"selected":""}>Gets every random haste</option><option value="miss" ${o.missRandHaste?"selected":""}>Misses every random haste</option>` : ""}</select>` : `<span class="muted">–</span>`;
+      rows.push(`<tr><td><div class="wi-thumb"><div class="pic ${tcls(it.tier)}"><img src="${IMG[it.slug]||""}" alt=""></div><span>${it.ench ? it.ench + " " : ""}${it.name}</span></div></td><td>${critSel}</td><td>${hst}</td><td>${ctl}</td></tr>`);
+    });
+  });
+  $("wi-items").innerHTML = `<thead><tr><th>Item</th><th>Crits</th><th>Haste</th><th>Slow and freeze</th></tr></thead><tbody>${rows.join("")}</tbody>` +
+    (DATA.sides.some(p => CONTROLS(p)) ? "" : `<tfoot><tr><td colspan="4" class="muted" style="font-size:12.5px">Slow and freeze: nobody in this fight has anything that slows or freezes, so there's nothing to change.</td></tr></tfoot>`);
+  $("wi-skills").innerHTML = DATA.sides.map((p, si) => { const act = (p.skills||[]).map((sk, k) => ({ sk, k })).filter(({ sk }) => RANDOM_SKILL(sk) && (sk.kind !== "trained" || p.items.some(x => x.slowOnRightCrit))); return !act.length ? "" :
+    `<div style="margin-top:6px"><b>${si ? p.name + "'s" : "Your"} skills with a random effect</b> <span class="muted" style="font-size:12px">untick to see the fight without it</span><div class="wi-skills">` + act.map(({ sk, k }) =>
+    `<label><input type="checkbox" id="ws_${si}_${k}" data-key="${si}_${k}" ${WI.skillOff[si + "_" + k] ? "" : "checked"}> ${sk.name}</label>`).join("") + `</div></div>`; }).join("");
+  $("wi-items").querySelectorAll("select").forEach(sel => sel.addEventListener("change", () => {
+    const key = sel.dataset.key, o = { ...(WI.ov[key] || {}) };
+    if (sel.dataset.f === "crit"){ if (sel.value) o.crit = sel.value; else delete o.crit; }
+    else if (sel.dataset.f === "haste"){ delete o.noHaste; delete o.hasteMagnet; delete o.missRandHaste; if (sel.value === "none") o.noHaste = true; if (sel.value === "magnet") o.hasteMagnet = true; if (sel.value === "miss") o.missRandHaste = true; }
+    else { delete o.immune; if (sel.value === "immune") o.immune = true; }
+    if (Object.keys(o).length) WI.ov[key] = o; else delete WI.ov[key];
+    sel.classList.toggle("set", !!sel.value);
+    runWhatIf();
+  }));
+  $("wi-items").querySelectorAll("input[type=range]").forEach(r => {
+    const show = () => { const lab = r.nextElementSibling; lab.textContent = r.value + "%"; lab.classList.toggle("set", +r.value !== +r.dataset.base); };
+    r.addEventListener("input", show);
+    r.addEventListener("change", () => { const key = r.dataset.key, o = { ...(WI.ov[key] || {}) }; if (+r.value === +r.dataset.base) delete o.critPct; else o.critPct = +r.value;
+      if (Object.keys(o).length) WI.ov[key] = o; else delete WI.ov[key]; show(); runWhatIf(); });
+  });
+  $("wi-stun").innerHTML = DATA.sides.map((p, si) => { const k = (p.skills||[]).findIndex(x => x.kind === "stun"); if (k < 0) return ""; const foe = DATA.sides[1 - si];
+    return `<div><b>Where ${si ? p.name + "'s" : "your"} freeze lands</b> <select data-si="${si}" class="${WI.stunAt[si] !== undefined ? "set" : ""}" aria-label="Where ${p.name}'s freeze lands"><option value="">Random</option>${foe.items.map((it, j) => it.cd > 0 ? `<option value="${j}" ${WI.stunAt[si] === j ? "selected" : ""}>${si ? "Your " : ""}${it.name}</option>` : "").join("")}</select></div>`; }).join("");
+  $("wi-stun").querySelectorAll("select").forEach(sel => sel.addEventListener("change", () => { const si = +sel.dataset.si; if (sel.value === "") delete WI.stunAt[si]; else WI.stunAt[si] = +sel.value; sel.classList.toggle("set", sel.value !== ""); runWhatIf(); }));
+  $("wi-skills").querySelectorAll("input").forEach(cb => cb.addEventListener("change", () => { const key = cb.dataset.key; if (cb.checked) delete WI.skillOff[key]; else WI.skillOff[key] = true; runWhatIf(); }));
+}
+function tile(k, base, now, fmtv, betterUp){
+  const d = now - base, good = betterUp ? d > 0 : d < 0;
+  const ds = Math.abs(d) < 1e-9 ? `<span class="muted">no change</span>` : `<span class="${good ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmtv(Math.abs(d))}</span>`;
+  return `<div class="tile"><div class="k">${k}</div><div class="v">${fmtv(now)}</div><div class="d">was ${fmtv(base)} · ${ds}</div></div>`;
+}
+function runWhatIf(){
+  const N = 200;
+  WI_BASE = whatIf(wiData(D => { D.ov = {}; D.skillOff = {}; D.stunAt = {}; }), N);
+  WI_RES = whatIf(wiData(), N);
+  const pc = v => Math.round(v*100) + "%", sec = v => v.toFixed(1) + "s", hp = v => fmt(v);
+  const label = wiLabel();
+  $("wi-res").innerHTML = (label ? `<div class="note-t" style="grid-column:1/-1"><b>What if:</b> ${label}</div>` : `<div class="note-t" style="grid-column:1/-1">No changes yet. These are the odds with normal luck.</div>`) +
+    tile("Win chance", WI_BASE.win, WI_RES.win, pc, true) + tile("Average fight length", WI_BASE.t, WI_RES.t, sec, false) + tile("Your health left when you win", WI_BASE.hp, WI_RES.hp, hp, true);
+}
+function watchWhatIf(){
+  const D = wiData(); D.seed = WI_RES.sample;
+  VIEW = D; SIM = simulate(D); play(false); buildSides(); simT = 0; draw();
+  $("wibar").hidden = false; $("wibar-t").textContent = "What if: " + (wiLabel() || "normal luck, another possible fight");
+  $("arena").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block:"start" });
+  play(true);
+}
+function backToReal(){ VIEW = DATA; $("wibar").hidden = true; play(false); rerun(false); }
+function rankLuck(){
+  const N = 100, scen = [];
+  DATA.sides.forEach((p, si) => p.items.forEach((it, ii) => {
+    const key = si + "_" + ii, nm = (it.ench ? it.ench + " " : "") + it.name + (si ? " (theirs)" : "");
+    if (it.crit !== undefined && it.crit > 0 && it.crit < 100) scen.push({ label:`${nm} never crits`, f: D => { D.ov[key] = { crit:"never" }; } });
+    if (it.crit !== undefined && it.crit < 100) scen.push({ label:`${nm} always crits`, f: D => { D.ov[key] = { crit:"always" }; } });
+    if (it.cd > 0 && CONTROLS(DATA.sides[1 - si])) scen.push({ label:`${nm} never slowed or frozen`, f: D => { D.ov[key] = { immune:true }; } });
+    if (it.cd > 0 && RAND_HASTE(p)) scen.push({ label:`${nm} gets every random haste`, f: D => { D.ov[key] = { hasteMagnet:true }; } });
+    if (it.cd > 0 && RAND_HASTE(p)) scen.push({ label:`${nm} misses every random haste`, f: D => { D.ov[key] = { missRandHaste:true }; } });
+    const sk = DATA.sides[1 - si].skills || [];
+    if (it.cd > 0 && sk.some(x => x.kind === "stun")) scen.push({ label: si ? `Your freeze lands on ${nm}` : `${DATA.sides[1].name}'s freeze lands on your ${nm}`, f: D => { D.stunAt = { [1 - si]: ii }; } });
+  }));
+  DATA.sides.forEach((p, si) => (p.skills||[]).forEach((sk, k) => { if (RANDOM_SKILL(sk) && (sk.kind !== "trained" || p.items.some(x => x.slowOnRightCrit))) scen.push({ label:`Without ${si ? p.name + "'s " : ""}${sk.name}`, f: D => { D.skillOff[si + "_" + k] = true; } }); }));
+  const hpNow = WI.hp ?? DATA.sides[1].hp;
+  const base = whatIf(wiData(D => { D.ov = {}; D.skillOff = {}; D.stunAt = {}; D.sides[1].hp = hpNow; }), N);
+  const out = []; let i = 0;
+  $("wi-rank").disabled = true;
+  const stepRank = () => {
+    const end = Math.min(scen.length, i + 3);
+    for (; i < end; i++){ const sc = scen[i]; const mk = () => wiData(D => { D.ov = {}; D.skillOff = {}; D.stunAt = {}; D.sides[1].hp = hpNow; sc.f(D); }); const r = whatIf(mk(), N); out.push({ ...sc, mk, r, dw: r.win - base.win, dt: r.t - base.t }); }
+    $("wi-rank-note").textContent = `Testing ${i} of ${scen.length} changes at ${fmt(hpNow)} opponent health…`;
+    if (i < scen.length){ setTimeout(stepRank, 0); return; }
+    out.sort((a, b) => Math.abs(b.dw) - Math.abs(a.dw) || Math.abs(b.dt) - Math.abs(a.dt));
+    $("wi-rank").disabled = false;
+    $("wi-rank-note").textContent = `With normal luck you win ${Math.round(base.win*100)}% at ${fmt(hpNow)} opponent health. Each row changes one thing.`;
+    const top = out.slice(0, 14);
+    $("wi-rank-tab").innerHTML = `<thead><tr><th>What if</th><th>Win chance</th><th>Change</th><th>Fight length</th><th></th></tr></thead><tbody>` + top.map((o, n) => `
+      <tr><td>${o.label}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="bar" style="flex:1"><i style="width:${Math.round(o.r.win*100)}%"></i></div><span class="num">${Math.round(o.r.win*100)}%</span></div></td>
+      <td class="num ${o.dw > 0.005 ? "up" : o.dw < -0.005 ? "down" : "muted"}">${Math.abs(o.dw) < 0.005 ? "none" : (o.dw > 0 ? "+" : "−") + Math.round(Math.abs(o.dw)*100) + " pts"}</td>
+      <td class="num">${o.r.t.toFixed(1)}s <span class="${o.dt < 0 ? "up" : o.dt > 0 ? "down" : "muted"}">(${o.dt >= 0 ? "+" : "−"}${Math.abs(o.dt).toFixed(1)}s)</span></td><td><button data-rank="${n}">Watch</button></td></tr>`).join("") + "</tbody>";
+    $("wi-rank-tab").querySelectorAll("[data-rank]").forEach(b => b.onclick = () => { const o = top[+b.dataset.rank], D = o.mk(); D.seed = o.r.sample; watchD(D, `${o.label}: you win ${Math.round(o.r.win*100)}% of fights like this`); });
+  };
+  setTimeout(stepRank, 0);
+}
+$("wi-hp").addEventListener("change", () => { const v = parseFloat($("wi-hp").value); if (isFinite(v) && v > 0){ WI.hp = v; runWhatIf(); } });
+$("wi-clear").onclick = () => { WI.ov = {}; WI.skillOff = {}; WI.stunAt = {}; WI.hp = DATA.sides[1].hp; buildWhatIf(); runWhatIf(); };
+$("wi-watch").onclick = watchWhatIf;
+$("wi-back").onclick = backToReal;
+$("wi-rank").onclick = rankLuck;
+
+// Odds summary at the top: precomputed from 1,000 fights per fight (SUMMARY, built by precompute.js).
+function renderOdds(){
+  const S = SUMMARY[BASE.key], lost = BASE.winner === 1, opp = BASE.sides[1], pc = v => Math.round(v*100) + "%";
+  const est = opp.hpSrc === "est";
+  const shown = S.flips.filter(f => DECIDES(f, S));
+  const flips = shown.length
+    ? `<div class="flips">${S.flips.map((f, i) => `<div class="row"><span>${f.label}</span><div class="bar"><i style="width:${Math.round(100*f.n/S.of)}%"></i></div><span class="num">${f.n} of ${S.of}</span><button data-flip="${i}" aria-label="Watch: ${f.label}">Watch</button></div>`).join("")}</div>`
+    : `<div class="note-t">No single piece of luck turns this fight around${S.flips.length ? ` (the best one flips only ${S.flips[0].n} of ${S.of})` : ""}, so the replay shows your real fight.</div>`;
+  $("odds").innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
+      <h2>Your odds</h2>
+      <div class="controls">${S.alt ? `<button class="primary" id="odds-alt">Watch a fight you ${lost ? "win" : "lose"}</button>` : ""}<button id="odds-real">Watch the real fight</button></div>
+    </div>
+    <div class="wi-res">
+      <div class="tile"><div class="k">Win</div><div class="v" style="color:var(--ok)">${pc(S.win)}</div><div class="d muted">of ${fmt(S.N)} fights with normal luck</div></div>
+      <div class="tile"><div class="k">Loss</div><div class="v" style="color:var(--hp)">${pc(1 - S.win)}</div><div class="d muted">real result: ${lost ? "loss" : "win"}</div></div>
+    </div>
+    ${est ? `<div class="note-t"><b>Health numbers aren't on BazaarHub yet.</b> ${opp.name}'s health is estimated at ${fmt(opp.hp)}${BASE.hpNote ? ", " + BASE.hpNote : ""}. If he had more:</div>
+    <div class="ladder">${S.ladder.map(l => `<span class="${l.hp === opp.hp ? "cur" : ""}">${fmt(l.hp)} health: ${pc(l.win)} win</span>`).join("")}</div>` : ""}
+    <div class="sub">${lost ? "What would have turned it into a win" : "What could have cost you the win"}</div>
+    <div class="note-t">${lost
+      ? `In the ${S.of} replays closest to your real fight, ${opp.name} had about ${fmt(S.margin.med)} health left when you went down (${fmt(S.margin.min)} to ${fmt(S.margin.max)}). Each row changes one thing in those same fights and counts how many you'd win.`
+      : `In the ${S.of} replays closest to your real fight, you had about ${fmt(S.margin.med)} health left when ${opp.name} went down. Each row changes one thing in those same fights and counts how many you'd lose.`}</div>
+    ${flips}${luckHTML(S)}`;
+  if ($("odds-alt")) $("odds-alt").onclick = () => watchSpec({}, S.alt, `Another possible fight with normal luck, where you ${lost ? "win" : "lose"}`);
+  $("odds-real").onclick = () => { $("arena").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block:"start" }); backToReal(); simT = 0; play(true); };
+  $("odds").querySelectorAll("[data-flip]").forEach(b => b.onclick = () => { const f = S.flips[+b.dataset.flip]; watchSpec(f.spec, f.seed, `${f.label}, in a fight like your real one`); });
+}
+// Pick where a Stunning Strike freeze lands, right under the skill
+function stunPick(p, si){
+  const k = (p.skills||[]).findIndex(x => x.kind === "stun"); if (k < 0) return "";
+  const foe = VIEW.sides[1 - si], L = SUMMARY[BASE.key] && SUMMARY[BASE.key].luck, opts = L && L.sides[si].freeze ? L.sides[si].freeze.opts : [];
+  const cur = VIEW.stunAt && VIEW.stunAt[si] !== undefined ? VIEW.stunAt[si] : "";
+  return `<label class="skpick"><span>${p.skills[k].name} freezes</span><select data-stunpick="${si}" class="${cur !== "" ? "set" : ""}" aria-label="Where ${si ? p.name + "'s" : "your"} Stunning Strike freeze lands">
+    <option value="">Random item</option>${foe.items.map((it, j) => { const o = opts.find(x => x.j === j); return it.cd > 0 ? `<option value="${j}" ${cur === j ? "selected" : ""}>${si ? "Your " : ""}${it.name}${o ? ` (you win ${Math.round(o.win*100)}%)` : ""}</option>` : ""; }).join("")}</select></label>`;
+}
+function onStunPick(sel){
+  const si = +sel.dataset.stunpick, D = structuredClone(VIEW === DATA ? DATA : VIEW);
+  D.stunAt = { ...(D.stunAt || {}) }; if (sel.value === "") delete D.stunAt[si]; else D.stunAt[si] = +sel.value;
+  if (sel.value === "") delete WI.stunAt[si]; else WI.stunAt[si] = +sel.value;
+  if (D.seed === undefined || VIEW === DATA) D.seed = SUMMARY[BASE.key] ? SUMMARY[BASE.key].real : DATA.seed;
+  const nm = si ? `${DATA.sides[1].name}'s freeze` : "Your freeze", t = sel.value === "" ? "lands on a random item" : `lands on ${sel.value !== "" && si ? "your " : ""}${DATA.sides[1 - si].items[+sel.value].name}`;
+  buildWhatIf(); runWhatIf();
+  watchD(D, `${nm} ${t}, in your real fight's rolls`);
+}
+document.addEventListener("change", e => { const sel = e.target.closest && e.target.closest("[data-stunpick]"); if (sel) onStunPick(sel); });
+// Who got lucky in the real fight, shown when the real result was the unlikely one
+function luckHTML(S){
+  const L = S.luck; if (!L || !L.upset) return "";
+  const lost = BASE.winner === 1, me = L.sides[0], op = L.sides[1], pc = v => Math.round(v*100) + "%", one = p => "1 in " + fmt(Math.round(1/p));
+  const realP = lost ? S.win : 1 - S.win;
+  const freezeLine = (f, mine) => {
+    if (!f) return "";
+    const avg = f.opts.reduce((a, o) => a + o.win, 0) / f.opts.length, best = f.opts.reduce((a, o) => o.win > a.win ? o : a), worst = f.opts.reduce((a, o) => o.win < a.win ? o : a);
+    const good = f.win >= avg + 0.03, bad = f.win <= avg - 0.03; // good or bad for you
+    const who = mine ? "Your freeze" : `${op.name}'s freeze`;
+    const verdict = good ? (mine ? "a good spot for you" : "a lucky miss for you") : bad ? (mine ? (f.on === worst.j ? "the worst spot it could pick" : "a poor spot") : `a good spot for ${op.name}`) : "about normal";
+    const cmp = bad || good ? ` You win ${pc(f.win)} with it there, ${pc(mine ? best.win : worst.win)} if it lands on ${mine ? best.name : "your " + worst.name}.` : ` You win ${pc(f.win)} with it there.`;
+    return { cls: good ? "good" : bad ? "bad" : "", text: `${who} hit ${mine ? "" : "your "}${f.name} at ${f.t}s: ${verdict}.${cmp}` };
+  };
+  const side = (x, mine) => {
+    const lines = [], d = x.act - x.exp, cold = mine ? d <= -1.5 : d >= 1.5, hot = mine ? d >= 1.5 : d <= -1.5;
+    lines.push({ cls: cold ? "bad" : hot ? "good" : "", text: `${x.act} crits where ${x.exp} was normal: ${Math.abs(d) < 1.5 ? "about normal" : (d < 0 ? "cold" : "hot")}.` });
+    x.items.filter(it => it.weight >= 0.05).forEach(it => {
+      if (it.streak) lines.push({ cls: mine ? "bad" : "good", text: `${it.name} missed ${it.streak.n} in a row at ${it.streak.at}% (${one(it.streak.p)}).` });
+      else if (it.weight >= 0.1 && it.longShots.length >= 1) lines.push({ cls: mine ? "good" : "bad", text: `${it.name} crit at only ${it.longShots.map(l => l.p + "%").join(" and ")} (${it.longShots.map(l => l.t + "s").join(", ")}).` });
+      else if (it.weight >= 0.1 && Math.abs(it.act - it.exp) >= 1.5) lines.push({ cls: (it.act < it.exp) === mine ? "bad" : "good", text: `${it.name} crit ${it.act} of ${it.n} (${it.exp} normal).` });
+    });
+    const fz = freezeLine(x.freeze, mine); if (fz) lines.push(fz);
+    return lines;
+  };
+  const mine = side(me, true), theirs = side(op, false);
+  const myBad = mine.some(l => l.cls === "bad"), theirGood = theirs.some(l => l.cls === "bad");
+  const myGood = mine.some(l => l.cls === "good"), theirBad = theirs.some(l => l.cls === "good");
+  const verdict = lost
+    ? (myBad && !theirGood ? `Mostly your bad luck, not ${op.name}'s good luck.` : myBad && theirGood ? `Bad luck for you and some good luck for ${op.name}.` : theirGood ? `${op.name} got lucky.` : "Neither side's luck stands out, so the gap is small.")
+    : (myGood && !theirBad ? "Mostly your good luck." : myGood && theirBad ? `Good luck for you and bad luck for ${op.name}.` : theirBad ? `${op.name} got unlucky.` : "Neither side's luck stands out, so the gap is small.");
+  const P = L.pop, sgn = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v);
+  const col = (h, ls) => `<div class="luck-col"><div class="k">${h}</div>${ls.map(l => `<div class="ln ${l.cls}">${l.text}</div>`).join("")}</div>`;
+  return `<div class="sub">${lost ? `Why you lost a fight you win ${pc(S.win)} of the time` : `How you won a fight you win only ${pc(S.win)} of the time`}</div>
+    <div class="luck-verdict">${verdict}</div>
+    <div class="luck-grid">${col("Your luck", mine)}${col(op.name + "'s luck", theirs)}</div>
+    <div class="note-t">In all ${fmt(P.n)} of ${fmt(S.N)} fights that end ${lost ? "in a loss" : "in a win"}, your crits run ${sgn(P.mine)} from normal and ${op.name}'s ${sgn(P.theirs)}. BazaarHub doesn't record the real rolls, so this reads the replay that best matches your recap. Red is luck that hurt you, green is luck that helped.</div>`;
+}
+// Play one specific fight: a set of luck changes on a given roll sequence
+function watchSpec(spec, seed, label, still){
+  const D = structuredClone(DATA); D.ov = structuredClone(spec.ov || {}); D.skillOff = { ...(spec.skillOff || {}) }; D.stunAt = spec.stunAt; D.seed = seed;
+  watchD(D, label, still);
+}
+function watchD(D, label, still){
+  VIEW = D; SIM = simulate(D); play(false); buildSides(); simT = 0; draw();
+  $("wibar").hidden = false; $("wibar-t").textContent = label;
+  if (still){ simT = SIM.end.t * 0.55; draw(); return; }
+  $("arena").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block:"start" });
+  play(true);
+}
+// A piece of luck "decides" the fight if it flips at least 1 in 10 of the fights closest to the real one
+const DECIDES = (f, S) => f.n >= Math.max(4, S.of * 0.1);
+// The replay opens on the piece of luck that decided the fight most
+function openOnTopLuck(){
+  const S = SUMMARY[BASE.key], f = S && S.flips[0];
+  if (!f || !f.seed || !DECIDES(f, S)) return; // nothing changes the result: keep the real fight
+  watchSpec(f.spec, f.seed, `Luck that mattered most: ${f.label}. It ${BASE.winner === 1 ? "wins" : "loses"} ${f.n} of ${S.of} fights like your real one.`, true);
+}
+function loadFight(i){
+  play(false);
+  BASE = FIGHTS[i]; DATA = structuredClone(BASE); VIEW = DATA; FIT = null;
+  WI.ov = {}; WI.skillOff = {}; WI.stunAt = {}; WI.hp = null;
+  $("title").textContent = BASE.title; $("eyebrow").textContent = BASE.eyebrow; $("runlink").href = BASE.runUrl;
+  $("fights").querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", j === i));
+  $("wi-rank-tab").innerHTML = ""; $("wi-rank-note").textContent = "Tries every single change on its own at the opponent health above, and ranks them by how much they move your win chance.";
+  renderOdds(); buildBench(); buildEffects(); rerun(false); buildWhatIf(); runWhatIf();
+  // Open on a mid-fight still so the page reads at rest; Play runs it from the start.
+  simT = Math.min(SIM.end.t * 0.55, SIM.end.t); draw();
+  openOnTopLuck();
+}
+// Search: open a fight by run link and day. Fights not built yet are listed for Claude to add.
+async function fetchFight(run, day){
+  try {
+    const r = await fetch(`api/fight?run=${encodeURIComponent(run)}${day ? "&day=" + day : ""}`, { headers:{ accept:"application/json" } });
+    if (!r.ok) return null; const j = await r.json(); return j && j.fight ? j : null;
+  } catch { return null; }
+}
+$("find").addEventListener("submit", async e => {
+  e.preventDefault();
+  const q = $("find-run").value.trim(), msg = $("find-msg");
+  const run = (q.match(/runs\/([a-z0-9]+)/i) || q.match(/^([a-z0-9]{20,})$/i) || [])[1];
+  const day = +$("find-day").value || +((q.match(/[?&]day=(\d+)/) || [])[1]) || 0;
+  msg.hidden = false;
+  if (!run){ msg.textContent = "Paste a run link like bazaarhub.gg/runs/… or just its id."; return; }
+  const mine = FIGHTS.map((f, i) => ({ f, i })).filter(x => x.f.run === run.toLowerCase());
+  const hit = day ? mine.find(x => x.f.day === day) : mine.sort((a, b) => b.f.day - a.f.day)[0];
+  if (hit){ msg.hidden = true; loadFight(hit.i); return; }
+  // On the website the server may already have this fight built; the published page has no server and falls through
+  msg.textContent = "Looking for that fight…";
+  const got = await fetchFight(run.toLowerCase(), day);
+  if (got){ msg.hidden = true; FIGHTS.push(got.fight); SUMMARY[got.fight.key] = got.summary; drawFightTabs(); loadFight(FIGHTS.length - 1); return; }
+  const ask = `https://bazaarhub.gg/runs/${run}${day ? "?day=" + day : ""}`;
+  msg.innerHTML = `${mine.length ? `This run has ${mine.map(x => "day " + x.f.day).join(", ")} built, not ${day ? "day " + day : "that fight"}.` : "That fight isn't built yet."} The page can't read BazaarHub by itself, so send <code>${ask}</code> to Claude in your project and it gets added here.`;
+});
+function drawFightTabs(){ $("fights").innerHTML = FIGHTS.map((f, i) => `<button data-i="${i}">${f.label}</button>`).join(""); }
+drawFightTabs();
+$("fights").addEventListener("click", e => { const b = e.target.closest("button"); if (b) loadFight(+b.dataset.i); });
+loadFight(0);
+</script>
