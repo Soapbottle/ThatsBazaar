@@ -1,5 +1,7 @@
 // Open in Replay: on a BazaarHub run page (?day=N), reads that day's fights like the Board Reader and opens them in the replay site.
 (async()=>{
+// Open the tab now, while the click still counts, or the popup blocker stops it after the wait below
+const win=window.open('about:blank','_blank');
 const T=['bronze','silver','gold','diamond','legendary'];
 const secs=[];
 document.querySelectorAll('*').forEach(h=>{
@@ -7,7 +9,7 @@ document.querySelectorAll('*').forEach(h=>{
  let s=h;while(s&&!/max health/.test(s.innerText))s=s.parentElement;
  if(s&&!secs.includes(s))secs.push(s);
 });
-if(!secs.length){alert('No fight boards found. Open a BazaarHub run page (?day=N), wait until the boards finish loading, then click again.');return;}
+if(!secs.length){if(win)win.close();alert('No fight boards found. Open a BazaarHub run page (?day=N), wait until the boards finish loading, then click again.');return;}
 let out='';
 secs.forEach(s=>{
  const txt=s.innerText;
@@ -41,5 +43,6 @@ let b='';z.forEach(c=>b+=String.fromCharCode(c));
 const d64=btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const run=(location.pathname.match(/runs\/([a-z0-9]+)/i)||[])[1]||'';
 const day=new URLSearchParams(location.search).get('day')||((document.body.innerText.match(/\bDay (\d+)\b/)||[])[1])||'';
-window.open('https://soapbottle.github.io/ThatsBazaar/#run='+run+'&day='+day+'&d='+d64,'_blank');
+const url='https://soapbottle.github.io/ThatsBazaar/'+String.fromCharCode(35)+'run='+run+'&day='+day+'&d='+d64;
+if(win)win.location.href=url;else location.href=url;
 })();
