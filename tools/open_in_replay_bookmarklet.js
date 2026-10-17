@@ -1,15 +1,15 @@
-// Open in Replay: on a BazaarHub run page (?day=N), reads that day's fights like the Board Reader and opens them in the replay site.
+// Open in Replay: on a BazaarHub run page, reads every day's fights like the Board Reader and opens them in the replay site, on the day you're looking at.
 (async()=>{
 // Open the tab now, while the click still counts, or the popup blocker stops it after the wait below
 const win=window.open('about:blank','_blank');
-const T=['bronze','silver','gold','diamond','legendary'];
+const read=(root,dayN)=>{
 const secs=[];
-document.querySelectorAll('*').forEach(h=>{
+root.querySelectorAll('*').forEach(h=>{
  if(h.children.length||!/^What .+'s items did$/.test(h.textContent.trim()))return;
  let s=h;while(s&&!/max health/.test(s.innerText))s=s.parentElement;
  if(s&&!secs.includes(s))secs.push(s);
 });
-if(!secs.length){if(win)win.close();alert('No fight boards found. Open a BazaarHub run page (?day=N), wait until the boards finish loading, then click again.');return;}
+if(!secs.length)return '';
 let out='';
 secs.forEach(s=>{
  const txt=s.innerText;
@@ -29,20 +29,35 @@ secs.forEach(s=>{
  [...txt.matchAll(/\n(SHINY|TURBO|MOSSY|DEADLY|RESTORATIVE|TOXIC|FIERY|ICY|HEAVY|SHIELDED|GOLDEN|RADIANT|OBSIDIAN)\n([^\n]+)/g)].forEach(m=>{ench[m[2]]=(ench[m[2]]||[]).concat(m[1][0]+m[1].slice(1).toLowerCase());});
  const used={};
  const fmt=o=>{let e='';if(ench[o.n]&&ench[o.n].length){const k=used[o.n]||0;e=ench[o.n][k]?', '+ench[o.n][k]:'';used[o.n]=k+1;}return o.n+' ['+(o.t||'?')[0].toUpperCase()+(o.t||'?').slice(1)+e+']';};
- out+='=== '+title+' ===\n';
+ out+='=== Day '+dayN+' · '+title+' ===\n';
  P.slice(0,2).forEach((p,ix)=>{
   out+=(heads[ix]||('Player '+(ix+1)))+'\n  Board: '+p.items.map(fmt).join(' | ')+'\n  Skills: '+(p.skills.map(o=>o.n+' ['+o.t+']').join(', ')||'-')+'\n';
  });
  const w=txt.indexOf('What ');if(w>=0)out+=txt.slice(w).replace(/\n(SHINY|TURBO|MOSSY|DEADLY|RESTORATIVE|TOXIC|FIERY|ICY|HEAVY|SHIELDED|GOLDEN|RADIANT|OBSIDIAN)\n/g,'\n$1 ').trim()+'\n';
  out+='\n';
 });
+return out;
+};
+const T=['bronze','silver','gold','diamond','legendary'];
+const day=new URLSearchParams(location.search).get('day')||((document.body.innerText.match(/\bDay (\d+)\b/)||[])[1])||'';
+const last=Math.max(+day||0,...[...document.body.innerText.matchAll(/\bDay (\d+)\b/g)].map(m=>+m[1]));
+const say=t=>{try{if(win)win.document.body.textContent=t;}catch(e){}};
+// Every other day: fetch its page and lay it out off screen so it reads like the one on screen
+const box=document.createElement('div');box.style.cssText='position:absolute;left:-20000px;top:0;width:1400px';document.body.appendChild(box);
+const parts={};parts[day]=read(document.body,day);
+const days=[];for(let n=1;n<=last;n++)if(String(n)!==String(day))days.push(n);
+let done=0;
+const one=async n=>{try{const h=await(await fetch(location.pathname+'?day='+n,{credentials:'include'})).text();const el=document.createElement('div');el.innerHTML=new DOMParser().parseFromString(h,'text/html').body.innerHTML;box.appendChild(el);parts[n]=read(el,n);el.remove();}catch(e){parts[n]='';}say('Reading BazaarHub: day '+(++done)+' of '+days.length+'…');};
+for(let i=0;i<days.length;i+=4)await Promise.all(days.slice(i,i+4).map(one));
+box.remove();
+let out='';for(let n=1;n<=last;n++)out+=parts[n]||'';
+if(!out){if(win)win.close();alert('No fight boards found. Open a BazaarHub run page, wait until the boards finish loading, then click again.');return;}
 // Hand the text to the replay site in its link, deflated to keep the link short
 const raw=new TextEncoder().encode(out);
 const z=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
 let b='';z.forEach(c=>b+=String.fromCharCode(c));
 const d64=btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const run=(location.pathname.match(/runs\/([a-z0-9]+)/i)||[])[1]||'';
-const day=new URLSearchParams(location.search).get('day')||((document.body.innerText.match(/\bDay (\d+)\b/)||[])[1])||'';
 const url='https://soapbottle.github.io/ThatsBazaar/'+String.fromCharCode(35)+'run='+run+'&day='+day+'&d='+d64;
 if(win)win.location.href=url;else location.href=url;
 })();

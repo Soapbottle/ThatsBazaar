@@ -99,6 +99,12 @@ button{font:inherit;font-weight:600;color:var(--fg);background:var(--panel-2);bo
 button:hover{border-color:var(--accent)}
 button:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.primary{background:linear-gradient(180deg,#f6bd5a,#d68a22);color:#2a1505;border-color:#f6bd5a;min-width:84px}
+.days{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.days:empty{display:none}
+.days button{padding:6px 10px;font-family:var(--mono);font-size:12.5px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:92px}
+.days button small{font-size:11px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.days button .w{color:var(--good,#7fd07f)}.days button .l{color:var(--bad,#e2665a)}
+.days button[aria-pressed="true"]{background:var(--panel-2);border-color:var(--accent);color:var(--accent)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:0;border-radius:0;padding:7px 10px;background:transparent;font-family:var(--mono);font-size:12.5px}
 .seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--accent)}
@@ -222,16 +228,16 @@ td.num{font-family:var(--mono)}
         <button class="primary" type="submit">Open</button>
       </form>
       <div class="note-t" id="find-msg" hidden></div>
-      <button id="paste-open" type="button">Paste a fight</button>
+      <button id="paste-open" type="button" hidden>Paste a fight</button>
       <div id="paste" class="paste" hidden>
         <div class="note-t">On a BazaarHub run page, open the day you want, click your Board Reader bookmarklet, press Copy, and paste it here. Every fight of that day gets built, with the odds worked out on the spot.</div>
         <textarea id="paste-text" rows="8" placeholder="=== Hour 6 · ... ===" aria-label="Board Reader copy"></textarea>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="primary" id="paste-build" type="button">Build</button><span class="note-t" id="paste-msg"></span></div>
       </div>
-      <div class="seg" role="group" aria-label="Pick a fight" id="fights"></div>
       <a class="runlink" id="runlink" target="_blank" rel="noopener">Open the run on BazaarHub ↗</a>
     </div>
   </header>
+  <nav class="days" aria-label="Pick a day" id="fights"></nav>
 
   <section class="panel" id="odds" aria-label="Your odds in this fight"></section>
 
@@ -1063,7 +1069,7 @@ function parseReader(text, runId){
     const did = body.split(/What (.+?)'s items did/);
     sides.forEach(p => { p.did = []; });
     for (let k = 1; k < did.length; k += 2){ const who = sides.find(p => p.name === did[k].trim()) || sides[(k - 1) / 2]; if (who) who.did = parseDid(did[k + 1] || "", who.items); }
-    const hour = (title.match(/Hour (\d+)/) || [])[1], dayM = text.match(/day[=\s](\d+)/i);
+    const hour = (title.match(/Hour (\d+)/) || [])[1], dayM = title.match(/\bDay (\d+)/i) || text.match(/day[=\s](\d+)/i);
     const won = /\b(won|win|victory)\b/i.test(title) ? 0 : /\b(lost|loss|defeat|died)\b/i.test(title) ? 1 : null;
     fights.push({ run: runId || "paste", day: dayM ? +dayM[1] : 0, hour: hour ? +hour : 0, title, winner: won, sides });
   }
@@ -1586,7 +1592,7 @@ function renderOdds(){
     ${est ? `<div class="note-t"><b>Health numbers aren't on BazaarHub yet.</b> ${opp.name}'s health is estimated at ${fmt(opp.hp)}${BASE.hpNote ? ", " + BASE.hpNote : ""}. If he had more:</div>
     <div class="ladder">${S.ladder.map(l => `<span class="${l.hp === opp.hp ? "cur" : ""}">${fmt(l.hp)} health: ${pc(l.win)} win</span>`).join("")}</div>` : ""}
     <div class="sub">${lost ? "What would have turned it into a win" : "What could have cost you the win"}</div>
-    <div class="note-t">${lost
+    <div class="note-t">${!S.of ? `None of the replays ended the way your real fight did, so the odds above are rough. The opponent's health or one of the item numbers is probably off.` : lost
       ? `In the ${S.of} replays closest to your real fight, ${opp.name} had about ${fmt(S.margin.med)} health left when you went down (${fmt(S.margin.min)} to ${fmt(S.margin.max)}). Each row changes one thing in those same fights and counts how many you'd win.`
       : `In the ${S.of} replays closest to your real fight, you had about ${fmt(S.margin.med)} health left when ${opp.name} went down. Each row changes one thing in those same fights and counts how many you'd lose.`}</div>
     ${flips}${luckHTML(S)}`;
@@ -1614,7 +1620,7 @@ function onStunPick(sel){
 document.addEventListener("change", e => { const sel = e.target.closest && e.target.closest("[data-stunpick]"); if (sel) onStunPick(sel); });
 // Who got lucky in the real fight, shown when the real result was the unlikely one
 function luckHTML(S){
-  const L = S.luck; if (!L || !L.upset) return "";
+  const L = S.luck; if (!L || !L.upset || !S.of) return "";
   const lost = BASE.winner === 1, me = L.sides[0], op = L.sides[1], pc = v => Math.round(v*100) + "%", one = p => "1 in " + fmt(Math.round(1/p));
   const realP = lost ? S.win : 1 - S.win;
   const freezeLine = (f, mine) => {
@@ -1713,13 +1719,17 @@ $("find").addEventListener("submit", async e => {
 });
 // Tabs show every fight of the open run's day, by hour
 function drawFightTabs(){
-  const day = FIGHTS.map((f, i) => ({ f, i })).filter(x => x.f.run === BASE.run && x.f.day === BASE.day).sort((a, b) => (a.f.hour||0) - (b.f.hour||0));
-  $("fights").innerHTML = day.map(({ f, i }) => `<button data-i="${i}" aria-pressed="${f === BASE}">${f.hour ? "Hour " + f.hour + " · " : ""}${f.winner === 0 ? "Win" : "Loss"} vs ${f.sides[1].name}</button>`).join("");
+  // Every fight of the loaded run, by day then hour
+  const all = FIGHTS.map((f, i) => ({ f, i })).filter(x => x.f.run === BASE.run).sort((a, b) => (a.f.day||0) - (b.f.day||0) || (a.f.hour||0) - (b.f.hour||0));
+  const perDay = {}; all.forEach(({ f }) => { perDay[f.day] = (perDay[f.day] || 0) + 1; });
+  $("fights").innerHTML = all.length < 2 ? "" : all.map(({ f, i }) => `<button data-i="${i}" aria-pressed="${f === BASE}"><span>Day ${f.day}${perDay[f.day] > 1 && f.hour ? " · H" + f.hour : ""} <b class="${f.winner === 0 ? "w" : "l"}">${f.winner === 0 ? "W" : "L"}</b></span><small>${f.sides[1].name}</small></button>`).join("");
 }
 drawFightTabs();
 $("fights").addEventListener("click", e => { const b = e.target.closest("button"); if (b) openFight(+b.dataset.i); });
 // Fights from a paste need a moment for their odds, so show that before the page freezes for it
 function openFight(i){
+  // Fights from the bookmark are built only when first opened
+  if (FIGHTS[i].pending){ const msg = $("find-msg"); msg.hidden = false; msg.textContent = `Building day ${FIGHTS[i].day}…`; return setTimeout(() => { const P = FIGHTS[i].pending, F = genFight(P); F.key += "-" + P.hour; F.hour = P.hour; FIGHTS[i] = F; msg.hidden = true; openFight(i); }, 30); }
   if (SUMMARY[FIGHTS[i].key]) return loadFight(i);
   const msg = $("find-msg"); msg.hidden = false; msg.textContent = `Working out the odds for ${FIGHTS[i].label}…`;
   setTimeout(() => { loadFight(i); msg.hidden = true; }, 30);
@@ -1739,13 +1749,14 @@ $("paste-build").onclick = () => {
     let first = -1;
     parsed.forEach(P => {
       P.day = P.day || day;
-      const F = genFight(P), old = FIGHTS.findIndex(x => x.key === F.key + "-" + P.hour);
-      F.key += "-" + P.hour; F.hour = P.hour;
-      delete SUMMARY[F.key];
+      const key = "gen-" + P.run + "-" + P.day + "-" + P.hour, old = FIGHTS.findIndex(x => x.key === key);
+      // Keep only what the day buttons need until the fight is opened
+      const F = { key, run: P.run, day: P.day, hour: P.hour, winner: P.winner, sides: P.sides, label: `day ${P.day}`, pending: P };
+      delete SUMMARY[key];
       if (old >= 0) FIGHTS[old] = F; else FIGHTS.push(F);
       const at = old >= 0 ? old : FIGHTS.length - 1;
-      // Open the day's PvP fight: the one against a hero
-      if (first < 0 || P.sides[1].hero) first = at;
+      // Open the day the bookmark was clicked on, on its PvP fight (the one against a hero)
+      if (first < 0 || (P.day === day && (FIGHTS[first].day !== day || P.sides[1].hero))) first = at;
     });
     $("paste").hidden = true; msg.textContent = "";
     openFight(first);

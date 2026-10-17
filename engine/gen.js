@@ -173,7 +173,7 @@ function parseReader(text, runId){
     const did = body.split(/What (.+?)'s items did/);
     sides.forEach(p => { p.did = []; });
     for (let k = 1; k < did.length; k += 2){ const who = sides.find(p => p.name === did[k].trim()) || sides[(k - 1) / 2]; if (who) who.did = parseDid(did[k + 1] || "", who.items); }
-    const hour = (title.match(/Hour (\d+)/) || [])[1], dayM = text.match(/day[=\s](\d+)/i);
+    const hour = (title.match(/Hour (\d+)/) || [])[1], dayM = title.match(/\bDay (\d+)/i) || text.match(/day[=\s](\d+)/i);
     const won = /\b(won|win|victory)\b/i.test(title) ? 0 : /\b(lost|loss|defeat|died)\b/i.test(title) ? 1 : null;
     fights.push({ run: runId || "paste", day: dayM ? +dayM[1] : 0, hour: hour ? +hour : 0, title, winner: won, sides });
   }
