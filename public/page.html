@@ -78,6 +78,7 @@ header p{margin:6px 0 0;max-width:66ch;color:var(--muted)}
 .card.slowed .cdline{background:var(--slow);box-shadow:0 0 8px var(--slow)}
 .card .top{position:absolute;top:5px;left:5px;right:5px;display:flex;flex-wrap:wrap;gap:3px;justify-content:space-between;align-items:flex-start}
 .badge{font-family:var(--mono);font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:6px;background:rgba(12,6,2,.85);border:1px solid var(--line);white-space:nowrap}
+.b-poi{color:var(--ok);border-color:#3f7a2c} .chip.poison{color:var(--ok)}
 .b-dmg{color:#ff9aa2;border-color:#b8323a} .b-burn{color:var(--burn);border-color:#a8501c} .b-hst{color:var(--haste);border-color:#2f7d99}
 .b-sh{color:var(--shield);border-color:#9b7a1e} .b-rg{color:var(--regen);border-color:#3f7a35} .b-cr{color:#ffe066;border-color:#8a7420}
 .b-mc{color:var(--accent)} .b-st{color:var(--slow);border-color:#5d3f99}
@@ -171,6 +172,8 @@ td.num{font-family:var(--mono)}
 .bench input.changed{border-color:var(--accent);color:var(--accent)}
 .src{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
 .src.track{color:var(--ok)} .src.page{color:var(--haste)} .src.run{color:#ffd27a} .src.est{color:var(--warn)} .src.rule{color:var(--tempo)}
+.paste{display:grid;gap:8px;width:min(560px,100%);background:var(--well);border:1px solid var(--line);border-radius:10px;padding:10px}
+.paste textarea{width:100%;background:var(--bg,#120904);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:12px;resize:vertical}
 .find{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;width:100%}
 .find input{background:var(--well);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-size:13.5px}
 .find #find-run{flex:1 1 240px;min-width:0}
@@ -210,7 +213,7 @@ td.num{font-family:var(--mono)}
     <div>
       <div class="eyebrow" id="eyebrow"></div>
       <h1 id="title"></h1>
-      <p>Your run replayed from the exact item stats your tracker recorded, every item's active and passive effects, and your skills. Totals are checked against the fight recap on BazaarHub.</p>
+      <p id="blurb">Your run replayed from the exact item stats your tracker recorded, every item's active and passive effects, and your skills. Totals are checked against the fight recap on BazaarHub.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
       <form id="find" class="find" role="search" autocomplete="off">
@@ -219,6 +222,12 @@ td.num{font-family:var(--mono)}
         <button class="primary" type="submit">Open</button>
       </form>
       <div class="note-t" id="find-msg" hidden></div>
+      <button id="paste-open" type="button">Paste a fight</button>
+      <div id="paste" class="paste" hidden>
+        <div class="note-t">On a BazaarHub run page, open the day you want, click your Board Reader bookmarklet, press Copy, and paste it here. Every fight of that day gets built, with the odds worked out on the spot.</div>
+        <textarea id="paste-text" rows="8" placeholder="=== Hour 6 · ... ===" aria-label="Board Reader copy"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="primary" id="paste-build" type="button">Build</button><span class="note-t" id="paste-msg"></span></div>
+      </div>
       <div class="seg" role="group" aria-label="Pick a fight" id="fights"></div>
       <a class="runlink" id="runlink" target="_blank" rel="noopener">Open the run on BazaarHub ↗</a>
     </div>
@@ -298,6 +307,8 @@ function badges(it){
   if (it.dmg) b.push(`<span class="badge b-dmg" data-dmg>${fmt(it.dmg)}</span>`);
   if (it.onEnemyFastest) b.push(`<span class="badge b-dmg">${it.onEnemyFastest.dmg}</span>`);
   if (it.burn || it.burnBoth) b.push(`<span class="badge b-burn">${it.burn || it.burnBoth}</span>`);
+  if (it.poison) b.push(`<span class="badge b-poi">${it.poison}</span>`);
+  if (it.heal) b.push(`<span class="badge b-rg">+${it.heal}</span>`);
   if (it.burnOnAdjSlow) b.push(`<span class="badge b-burn">${it.burnOnAdjSlow}</span>`);
   if (it.shield) b.push(`<span class="badge b-sh">${it.shield}</span>`);
   if (it.regen || it.onEnemyFastest?.regen) b.push(`<span class="badge b-rg">${it.regen || it.onEnemyFastest.regen}</span>`);
@@ -317,7 +328,7 @@ function buildSides(){
           <div class="status" id="st${si}"></div>
         </div>
       </div>
-      <div class="skwrap">${(p.skills||[]).length ? `<div class="skills">${p.skills.map((s, k) => `<div class="skill ${tcls(s.tier)} ${s.kind==="none"?"dim":""}" id="sk${si}_${k}" title="${s.name} (${s.tier}): ${s.text}"><img src="${SKIMG[s.slug]||""}" alt="${s.name}"><span class="n" id="skn${si}_${k}" hidden></span></div>`).join("")}</div>` : `<div class="note-t">${p.name}'s skills aren't in the tracker data.</div>`}${stunPick(p, si)}</div>
+      <div class="skwrap">${(p.skills||[]).length ? `<div class="skills">${p.skills.map((s, k) => `<div class="skill ${tcls(s.tier)} ${s.kind==="none"?"dim":""}" id="sk${si}_${k}" title="${s.name} (${s.tier}): ${s.text}"><img src="${SKIMG[s.slug]||""}" alt="${s.name}"><span class="n" id="skn${si}_${k}" hidden></span></div>`).join("")}</div>` : `<div class="note-t">${VIEW.gen ? "No skills listed for " + p.name + "." : p.name + "'s skills aren't in the tracker data."}</div>`}${stunPick(p, si)}</div>
       <div class="board-scroll"><div class="board">
         ${p.items.map((it, ii) => `
           <div class="card ${tcls(it.tier)}" id="c${si}_${ii}" tabindex="0" role="button" aria-label="${it.name} details" data-si="${si}" data-ii="${ii}" style="grid-column:span ${it.size}">
@@ -359,7 +370,7 @@ function buildEffects(){
 }
 
 function itemTotals(upTo){
-  const T = VIEW.sides.map(p => p.items.map(() => ({ uses:0, casts:0, dmg:0, burn:0, shield:0, heal:0, regen:0, haste:0, slow:0, charge:0, crit:0, gotFreeze:0, gotSlow:0, gotHaste:0, gotCharge:0 })));
+  const T = VIEW.sides.map(p => p.items.map(() => ({ uses:0, casts:0, dmg:0, burn:0, poison:0, shield:0, heal:0, regen:0, haste:0, slow:0, freeze:0, charge:0, crit:0, gotFreeze:0, gotSlow:0, gotHaste:0, gotCharge:0 })));
   const R1 = v => Math.round(v*10)/10;
   for (const e of SIM.events){
     if (e.t > upTo + 1e-6) break;
@@ -380,6 +391,8 @@ function itemTotals(upTo){
     else if (e.kind === "regen") x.regen += e.amt;
     else if (e.kind === "haste") x.haste++;
     else if (e.kind === "slow") x.slow++;
+    else if (e.kind === "poison") x.poison += e.amt;
+    else if (e.kind === "freeze" && e.ii >= 0) x.freeze++;
     else if (e.kind === "charge" && e.ii !== e.target) x.charge++;
   }
   return T;
@@ -392,7 +405,7 @@ function draw(){
     $("hp"+si).style.width = (100*s.hp/max)+"%";
     $("sh"+si).style.width = Math.min(100, 100*s.sh/max)+"%";
     $("hpl"+si).textContent = `${fmt(s.hp)} / ${fmt(max)}` + (s.sh>0 ? `  +${fmt(s.sh)} shield` : "");
-    $("st"+si).innerHTML = [ s.burn>=1 ? `<span class="chip burn">Burn ${fmt(s.burn)}</span>` : "", s.regen>0 ? `<span class="chip regen">Regen ${fmt(s.regen)}/s</span>` : "", s.tempo>0 ? `<span class="chip tempo">Tempo ${s.tempo}</span>` : "" ].join("");
+    $("st"+si).innerHTML = [ s.burn>=1 ? `<span class="chip burn">Burn ${fmt(s.burn)}</span>` : "", s.poison>=1 ? `<span class="chip poison">Poison ${fmt(s.poison)}</span>` : "", s.regen>0 ? `<span class="chip regen">Regen ${fmt(s.regen)}/s</span>` : "", s.tempo>0 ? `<span class="chip tempo">Tempo ${s.tempo}</span>` : "" ].join("");
     s.items.forEach((it, ii) => {
       const item = VIEW.sides[si].items[ii], card = $(`c${si}_${ii}`);
       if (item.cd > 0 && it.cd !== item.cd) $(`cdt${si}_${ii}`).textContent = it.cd + "s";
@@ -410,7 +423,7 @@ function draw(){
     rc.hidden = !done; $(`c${si}_${ii}`).classList.toggle("done", done);
     const nf = v => it.size === 1 && v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1) + "k" : fmt(v);
     if (done){
-      const rows = [["dmg","Damage","var(--hp)"],["burn","Burn","var(--burn)"],["shield","Shield","var(--shield)"],["heal","Heal","var(--heal)"],["regen","Regen","var(--regen)"],["haste","Hastes","var(--haste)"],["slow","Slows","var(--slow)"],["charge","Charges","var(--charge)"],["crit","Crits","var(--accent)"],
+      const rows = [["dmg","Damage","var(--hp)"],["burn","Burn","var(--burn)"],["poison","Poison","var(--ok)"],["shield","Shield","var(--shield)"],["heal","Heal","var(--heal)"],["regen","Regen","var(--regen)"],["haste","Hastes","var(--haste)"],["slow","Slows","var(--slow)"],["freeze","Freezes","var(--freeze)"],["charge","Charges","var(--charge)"],["crit","Crits","var(--accent)"],
         ["gotHaste","Hasted","var(--haste)","s"],["gotSlow","Slowed","var(--slow)","s"],["gotFreeze","Frozen","var(--freeze)","s"],["gotCharge","Charged","var(--charge)","s"]]
         .filter(([k]) => T[k]).map(([k, l, c, u]) => `<div><span style="color:${c}">${it.size === 1 ? ({ Damage:"Dmg", Shield:"Shld", Hastes:"Haste", Slows:"Slow", Charges:"Chg", Charged:"Chgd" }[l] || l) : l}</span> <b>${u ? T[k] + u : nf(T[k])}</b></div>`);
       rc.innerHTML = `<div class="nm">${it.ench ? it.ench + " " : ""}${it.name}</div>` + rows.join("") + `<div class="muted">${T.uses ? `Used ${T.uses}×${T.casts > T.uses ? (it.size === 1 ? `</div><div class="muted">${T.casts} hits` : ` · ${T.casts} hits`) : ""}` : it.cd > 0 ? "Never used" : T.casts ? `Fired ${T.casts}×` : "Passive"}</div>`;
@@ -488,6 +501,7 @@ function animateEvent(e){
     else { const to = center(target); floater(to.x + 60, to.y + 16, "+" + Math.round(e.amt) + " burn", "var(--burn)", "small"); }
     return;
   }
+  if (e.kind === "poisontick"){ const to = center($("bar"+e.on)); floater(to.x + to.w*.18, to.y, "-" + fmt(e.amt), "var(--ok)", "small"); return; }
   if (e.kind === "burntick"){ const to = center($("bar"+e.on)); floater(to.x + to.w*.32, to.y, "-" + fmt(e.amt), "var(--burn)", "small"); return; }
   if (e.kind === "regentick"){ const to = center($("bar"+e.on)); floater(to.x - to.w*.32, to.y, "+" + fmt(e.amt), "var(--regen)", "small"); return; }
   if (e.kind === "regen" && card){ const to = center($("bar"+e.si)); floater(to.x - 60, to.y + 16, "+" + e.amt + " regen", "var(--regen)", "small"); return; }
@@ -642,7 +656,7 @@ const RANDOM_SKILL = sk => ["flurry", "stun", "trained"].includes(sk.kind);
 // Can this side slow or freeze anything? If not, the other side's slow and freeze options are left out.
 const HASTES = p => p.items.some(it => it.haste);
 const RAND_HASTE = p => p.items.some(it => it.haste && (it.haste.mode === "random" || it.haste.mode === "friendAndOther"));
-const CONTROLS = p => p.items.some(it => it.slowOnRightCrit) || (p.skills||[]).some(sk => sk.kind === "stun");
+const CONTROLS = p => p.items.some(it => it.slowOnRightCrit || it.slowAct || it.freezeAct) || (p.skills||[]).some(sk => sk.kind === "stun");
 function wiData(extra){
   const D = structuredClone(DATA);
   D.ov = structuredClone(WI.ov); D.skillOff = { ...WI.skillOff }; D.stunAt = { ...WI.stunAt };
@@ -879,8 +893,13 @@ function loadFight(i){
   play(false);
   BASE = FIGHTS[i]; DATA = structuredClone(BASE); VIEW = DATA; FIT = null;
   WI.ov = {}; WI.skillOff = {}; WI.stunAt = {}; WI.hp = null;
+  $("blurb").textContent = BASE.gen
+    ? "Built from your Board Reader paste. Each item uses its real per-use averages from the recap, its cooldown is fitted so it gets its real number of uses, and its haste, slow and freeze targets are random like in the game."
+    : "Your run replayed from the exact item stats your tracker recorded, every item's active and passive effects, and your skills. Totals are checked against the fight recap on BazaarHub.";
   $("title").textContent = BASE.title; $("eyebrow").textContent = BASE.eyebrow; $("runlink").href = BASE.runUrl;
-  $("fights").querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", j === i));
+  drawFightTabs();
+  // A fight built from a paste works out its odds the first time it opens
+  if (!SUMMARY[BASE.key]){ const h = BASE.sides[1].hp; SUMMARY[BASE.key] = summarize(structuredClone(BASE), [h, Math.round(h*1.15), Math.round(h*1.3), Math.round(h*1.5)], 200); }
   $("wi-rank-tab").innerHTML = ""; $("wi-rank-note").textContent = "Tries every single change on its own at the opponent health above, and ranks them by how much they move your win chance.";
   renderOdds(); buildBench(); buildEffects(); rerun(false); buildWhatIf(); runWhatIf();
   // Open on a mid-fight still so the page reads at rest; Play runs it from the start.
@@ -909,10 +928,47 @@ $("find").addEventListener("submit", async e => {
   const got = await fetchFight(run.toLowerCase(), day);
   if (got){ msg.hidden = true; FIGHTS.push(got.fight); SUMMARY[got.fight.key] = got.summary; drawFightTabs(); loadFight(FIGHTS.length - 1); return; }
   const ask = `https://bazaarhub.gg/runs/${run}${day ? "?day=" + day : ""}`;
-  msg.innerHTML = `${mine.length ? `This run has ${mine.map(x => "day " + x.f.day).join(", ")} built, not ${day ? "day " + day : "that fight"}.` : "That fight isn't built yet."} The page can't read BazaarHub by itself, so send <code>${ask}</code> to Claude in your project and it gets added here.`;
+  msg.innerHTML = `${mine.length ? `This run has ${mine.map(x => "day " + x.f.day).join(", ")} built, not ${day ? "day " + day : "that fight"}.` : "That fight isn't built yet."} Open <code>${ask}</code>, click your Board Reader bookmarklet, Copy, and use Paste a fight.`;
 });
-function drawFightTabs(){ $("fights").innerHTML = FIGHTS.map((f, i) => `<button data-i="${i}">${f.label}</button>`).join(""); }
+// Tabs show every fight of the open run's day, by hour
+function drawFightTabs(){
+  const day = FIGHTS.map((f, i) => ({ f, i })).filter(x => x.f.run === BASE.run && x.f.day === BASE.day).sort((a, b) => (a.f.hour||0) - (b.f.hour||0));
+  $("fights").innerHTML = day.map(({ f, i }) => `<button data-i="${i}" aria-pressed="${f === BASE}">${f.hour ? "Hour " + f.hour + " · " : ""}${f.winner === 0 ? "Win" : "Loss"} vs ${f.sides[1].name}</button>`).join("");
+}
 drawFightTabs();
-$("fights").addEventListener("click", e => { const b = e.target.closest("button"); if (b) loadFight(+b.dataset.i); });
+$("fights").addEventListener("click", e => { const b = e.target.closest("button"); if (b) openFight(+b.dataset.i); });
+// Fights from a paste need a moment for their odds, so show that before the page freezes for it
+function openFight(i){
+  if (SUMMARY[FIGHTS[i].key]) return loadFight(i);
+  const msg = $("find-msg"); msg.hidden = false; msg.textContent = `Working out the odds for ${FIGHTS[i].label}…`;
+  setTimeout(() => { loadFight(i); msg.hidden = true; }, 30);
+}
+// Build fights from what the Board Reader bookmarklet copied
+$("paste-open").onclick = () => { $("paste").hidden = !$("paste").hidden; if (!$("paste").hidden) $("paste-text").focus(); };
+$("paste-build").onclick = () => {
+  const text = $("paste-text").value, msg = $("paste-msg");
+  const q = (text.match(/^Run:\s*(\S+)/m) || [])[1] || $("find-run").value.trim();
+  const run = ((q.match(/runs\/([a-z0-9]+)/i) || q.match(/^([a-z0-9]{20,})$/i) || [])[1] || "paste").toLowerCase();
+  const day = +((q.match(/[?&]day=(\d+)/) || [])[1]) || +$("find-day").value || 0;
+  let parsed; try { parsed = parseReader(text, run); } catch (err) { parsed = []; }
+  if (!parsed.length){ msg.textContent = "I couldn't find any fights in that. Paste everything the Board Reader copied, starting with the === Hour line."; return; }
+  const bad = parsed.filter(f => f.winner === null); bad.forEach(f => { f.winner = 0; });
+  msg.textContent = `Building ${parsed.length} fight${parsed.length > 1 ? "s" : ""}…`;
+  setTimeout(() => {
+    let first = -1;
+    parsed.forEach(P => {
+      P.day = P.day || day;
+      const F = genFight(P), old = FIGHTS.findIndex(x => x.key === F.key + "-" + P.hour);
+      F.key += "-" + P.hour; F.hour = P.hour;
+      delete SUMMARY[F.key];
+      if (old >= 0) FIGHTS[old] = F; else FIGHTS.push(F);
+      const at = old >= 0 ? old : FIGHTS.length - 1;
+      // Open the day's PvP fight: the one against a hero
+      if (first < 0 || P.sides[1].hero) first = at;
+    });
+    $("paste").hidden = true; msg.textContent = "";
+    openFight(first);
+  }, 30);
+};
 loadFight(0);
 </script>

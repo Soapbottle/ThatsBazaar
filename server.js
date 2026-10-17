@@ -9,9 +9,9 @@ function loadFights(){
     .map(f => JSON.parse(fs.readFileSync(path.join(ROOT, "fights", f), "utf8"))).sort((a, b) => a.order - b.order);
 }
 function renderPage(){
-  const fights = loadFights(), sim = fs.readFileSync(path.join(ROOT, "engine/sim.js"), "utf8");
+  const fights = loadFights(), sim = ["sim.js", "itemdb.js", "gen.js"].map(f => fs.readFileSync(path.join(ROOT, "engine", f), "utf8")).join("\n");
   const summary = Object.fromEntries(fights.map(x => [x.fight.key, x.summary]));
-  const engine = sim.replace(/^if \(typeof module.*$/m, "") +
+  const engine = sim.replace(/^if \(typeof module.*$/gm, "") +
     `\nconst FIGHTS = ${JSON.stringify(fights.map(x => x.fight))};\nlet BASE = FIGHTS[0];\nconst SUMMARY = ${JSON.stringify(summary)};\n`;
   const img = dir => `new Proxy({}, { get: (_, slug) => typeof slug === "string" ? "img/${dir}/" + slug + ".jpg" : undefined })`;
   return fs.readFileSync(path.join(ROOT, "public/page.html"), "utf8")

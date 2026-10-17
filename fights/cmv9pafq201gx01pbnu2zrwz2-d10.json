@@ -2,6 +2,7 @@
  "order": 1,
  "fight": {
   "key": "d10",
+  "hour": 6,
   "run": "cmv9pafq201gx01pbnu2zrwz2",
   "day": 10,
   "label": "Day 10 loss vs Plunken",

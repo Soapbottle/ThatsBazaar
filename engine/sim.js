@@ -3,9 +3,9 @@ function simulate(D){
   const dt = D.dt, R = n => Math.round(n*1000)/1000;
   const OV = (si, ii) => (D.ov && D.ov[si + "_" + ii]) || {};
   let seed = D.seed || 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
-  const S = D.sides.map((p, si) => ({ si, name:p.name, hpMax:p.hp, hp:p.hp, shield:0, burn:0, regen:0, tempo:0, tempoGained:0, tempoPerSec:p.tempoPerSec||0, burnBonus:0, critBonus:0, crits:0,
+  const S = D.sides.map((p, si) => ({ si, name:p.name, hpMax:p.hp, hp:p.hp, shield:0, burn:0, poison:0, regen:0, tempo:0, tempoGained:0, tempoPerSec:p.tempoPerSec||0, burnBonus:0, critBonus:0, crits:0,
     items: p.items.map((it, ii) => ({ ...it, ii, chargeCfg:it.charge, charge:0, hasteLeft:0, slowLeft:0, freezeLeft:0, dmgBonus:0, burnGain:0, critAdd:0, shieldNow: it.shield || 0,
-      flying:false, st:{ uses:0, casts:0, dmg:0, burn:0, regen:0, shield:0, heal:0, haste:0, slow:0, crit:0, gotCharge:0, gotHaste:0, gotSlow:0, gotFreeze:0, tempo:0, tempoSpent:0 } })),
+      flying:!!it.startsFlying, st:{ uses:0, casts:0, dmg:0, burn:0, poison:0, regen:0, shield:0, heal:0, haste:0, slow:0, crit:0, gotCharge:0, gotHaste:0, gotSlow:0, gotFreeze:0, tempo:0, tempoSpent:0 } })),
     skills: (p.skills || []).map(s => ({ ...s, count:0, st:{ triggers:0, did:{} } })) }));
   S.forEach(s => {
     s.cdItems = s.items.filter(x => x.cd > 0).map(x => x.ii);
@@ -28,6 +28,7 @@ function simulate(D){
   function heal(si, amt, src, direct){ const s = S[si]; s.hp = Math.min(s.hpMax, s.hp + amt); if (direct && s.burn > 0) s.burn *= 0.95; if (src >= 0) s.items[src].st.heal += amt; ev({ si, ii:src, kind:"heal", amt }); trigger("heal", { si, src }); }
   function addBurn(target, amt, si, ii){ S[target].burn += amt; if (ii >= 0) S[si].items[ii].st.burn += amt; ev({ si, ii, kind:"burn", amt, on:target }); if (target !== si) trigger("burn", { si, ii }); }
   function chargeItem(si, j, amt, fromIi){ const it = S[si].items[j]; if (!it || !(it.cd > 0)) return; it.charge = Math.min(it.cd, it.charge + amt); it.st.gotCharge += amt; ev({ si, ii:fromIi, kind:"charge", target:j, amt }); }
+  function freezeItem(si, j, amt, fromSi, fromIi){ const it = S[si].items[j]; if (!it) return; if (OV(si, j).immune){ ev({ si:fromSi, ii:fromIi, kind:"blocked", on:si, target:j }); return; } if (it.flying) amt /= 2; it.freezeLeft += amt; it.st.gotFreeze += amt; S[fromSi].items[fromIi].st.freeze = (S[fromSi].items[fromIi].st.freeze||0) + 1; ev({ si:fromSi, ii:fromIi, kind:"freeze", target:j, on:si, amt }); trigger("freeze", { si:fromSi }); }
   function slowItem(si, j, amt, fromSi, fromIi){ const it = S[si].items[j]; if (!it) return; if (OV(si, j).immune){ ev({ si:fromSi, ii:fromIi, kind:"blocked", on:si, target:j }); return; } if (it.flying) amt /= 2; it.slowLeft += amt; it.st.gotSlow += amt; S[fromSi].items[fromIi].st.slow++; ev({ si:fromSi, ii:fromIi, kind:"slow", target:j, on:si, amt }); trigger("slow", { si:fromSi, ii:fromIi }); }
   function gainTempo(si, amt, ii){ const s = S[si]; s.tempo += amt; s.tempoGained += amt; if (ii >= 0) s.items[ii].st.tempo += amt; }
   function spendTempo(si, amt, ii){ const s = S[si]; if (s.tempo < amt - 1e-9) return false; s.tempo -= amt; if (ii >= 0) s.items[ii].st.tempoSpent += amt; ev({ si, ii, kind:"tempo", amt:-amt }); return true; }
@@ -117,6 +118,10 @@ function simulate(D){
     }
     if (it.burnBoth){ const b = (it.burnBoth + me.burnBonus) * m; addBurn(foe, b, si, ii); S[si].burn += b; ev({ si, ii, kind:"burn", amt:b, on:si, self:true }); }
     if (it.shield){ const sh = it.shieldNow * m; me.shield += sh; it.st.shield += sh; ev({ si, ii, kind:"shield", amt:sh }); }
+    if (it.heal){ heal(si, it.heal * m, ii, true); }
+    if (it.poison){ const pz = it.poison * m; S[foe].poison += pz; it.st.poison += pz; ev({ si, ii, kind:"poison", amt:pz, on:foe }); }
+    if (it.slowAct){ const pool = S[foe].cdItems.slice(); for (let q = 0; q < it.slowAct.n && pool.length; q++){ const j = pool.splice(Math.floor(rnd()*pool.length), 1)[0]; slowItem(foe, j, it.slowAct.amt, si, ii); } }
+    if (it.freezeAct){ const pool = S[foe].cdItems.slice(); for (let q = 0; q < it.freezeAct.n && pool.length; q++){ const j = pool.splice(Math.floor(rnd()*pool.length), 1)[0]; freezeItem(foe, j, it.freezeAct.amt, si, ii); } }
     if (it.regen){ const rg = it.regen * m; me.regen += rg; it.st.regen += rg; ev({ si, ii, kind:"regen", amt:rg }); trigger("regen", { si }); }
     if (k === 0){
       if (it.haste){
@@ -145,7 +150,7 @@ function simulate(D){
     if (it.tempoRecast && spendTempo(si, it.tempoRecast, ii)) queue.push({ at:R(t + Math.max(mc, 1)*D.castGap), si, ii, k:0, reuse:true });
   }
   function snap(){
-    frames.push(S.map(s => ({ hp:Math.max(0, s.hp), sh:s.shield, burn:s.burn, regen:s.regen, tempo:s.tempo,
+    frames.push(S.map(s => ({ hp:Math.max(0, s.hp), sh:s.shield, burn:s.burn, poison:s.poison, regen:s.regen, tempo:s.tempo,
       items: s.items.map(it => ({ cd: it.cd, c: it.cd > 0 ? Math.min(1, it.charge/it.cd) : 0, h: it.hasteLeft > 0, hl: it.hasteLeft, sl: it.slowLeft > 0, fr: it.freezeLeft > 0, d: it.dmg ? it.dmg + it.dmgBonus : null })) })));
   }
   S.forEach((s, si) => s.items.forEach((it, ii) => { const f = OV(si, ii).startFreeze; if (f){ it.freezeLeft = f; it.st.gotFreeze += f; } }));
@@ -173,6 +178,7 @@ function simulate(D){
       if (s.burn >= 1){ const b = Math.round(s.burn); hit(si, b, "burn"); ev({ si:-1, ii:-1, kind:"burntick", amt:b, on:si }); s.burn *= 0.97; }
     });
     if (step % Math.round(1/dt) === 0) S.forEach((s, si) => { if (s.tempoPerSec) gainTempo(si, s.tempoPerSec, -1); });
+    if (step % Math.round(1/dt) === 0) S.forEach((s, si) => { if (s.poison >= 1){ hit(si, Math.round(s.poison), "poison"); ev({ si:-1, ii:-1, kind:"poisontick", amt:Math.round(s.poison), on:si }); } });
     if (step % Math.round(1/dt) === 0) S.forEach((s, si) => { if (s.regen > 0){ s.hp = Math.min(s.hpMax, s.hp + s.regen); ev({ si:-1, ii:-1, kind:"regentick", amt:s.regen, on:si }); } });
     if (t > D.sandstormAt && step % Math.round(0.2/dt) === 0){
       const sand = Math.min(1171, Math.round(2*Math.exp(0.67*(t - D.sandstormAt))));
@@ -230,4 +236,79 @@ function whatIf(D, N){
   const pool = res.filter(x => x.w === (wins*2 >= N));
   return { win: wins/N, t: tSum/N, hp: wins ? hpSum/wins : 0, sample: (pool[Math.floor(pool.length/2)] || res[0]).seed, N };
 }
-if (typeof module !== "undefined") module.exports = { simulate, fitSeeds, whatIf };
+// Odds summary for one fight: win chance, health ladder, the single luck changes that flip it, and who got lucky.
+// Shared by tools/precompute.js and the page (which builds generated fights on the spot with a smaller N).
+function summarize(B, LAD, NN){
+  const N = NN || 1000, E = { simulate, whatIf: (D, n) => whatIf(D, Math.min(n, N)), fitSeeds: (D, n) => fitSeeds(D, Math.min(n, N)) };
+  const CONTROLS = p => p.items.some(it => it.slowOnRightCrit) || (p.skills||[]).some(sk => sk.kind === "stun");
+
+// Who got lucky in the real fight: crit rolls against their chances, streaks, and where each freeze landed.
+function luckReport(B, seed, winP){
+  const lost = B.winner === 1, nm = it => (it.ench ? it.ench + " " : "") + it.name, W = D => E.whatIf(D, 1000).win;
+  const r = E.simulate({ ...structuredClone(B), seed });
+  const sides = B.sides.map((p, si) => {
+    const items = [];
+    p.items.forEach((it, ii) => {
+      const rolls = r.events.filter(e => e.kind === "roll" && e.si === si && e.ii === ii);
+      if (!rolls.length) return;
+      const act = rolls.filter(e => e.crit).length, exp = rolls.reduce((a, e) => a + e.p/100, 0);
+      // How much this item's crits move the fight: your win chance if it always vs never crits
+      const D1 = structuredClone(B), D2 = structuredClone(B); D1.ov = { [si+"_"+ii]: { crit:"always" } }; D2.ov = { [si+"_"+ii]: { crit:"never" } };
+      const wAlways = W(D1), wNever = W(D2), weight = Math.abs(wAlways - wNever);
+      // Longest miss streak at good odds and lucky crits at poor odds
+      let run = 1, best = { n:0, p:1, at:0 }, cur = { n:0, p:1 };
+      rolls.forEach(e => { if (!e.crit && e.p >= 50){ cur.n++; cur.p *= 1 - e.p/100; if (cur.p < best.p) best = { n:cur.n, p:cur.p, at:e.p }; } else cur = { n:0, p:1 }; });
+      const longShots = rolls.filter(e => e.crit && e.p <= 40).map(e => ({ p:Math.round(e.p), t:+e.t.toFixed(1) }));
+      items.push({ ii, name:nm(it), n:rolls.length, act, exp:+exp.toFixed(1), weight:+weight.toFixed(2), streak: best.n >= 2 && best.p < 0.05 ? { n:best.n, p:+best.p.toFixed(4), at:Math.round(best.at) } : null, longShots });
+    });
+    const act = items.reduce((a, x) => a + x.act, 0), exp = items.reduce((a, x) => a + x.exp, 0);
+    // Where this side's Stunning Strike freeze landed, and your win chance with it on each target
+    let freeze = null; const fe = r.events.find(e => e.kind === "freeze" && e.si === si);
+    if (fe){
+      const foe = B.sides[1 - si], opts = foe.items.map((it, j) => it.cd > 0 ? { j, name:nm(it), win: W({ ...structuredClone(B), stunAt:{ [si]: j } }) } : null).filter(Boolean);
+      freeze = { on:fe.target, name:nm(foe.items[fe.target]), t:+fe.t.toFixed(1), win: opts.find(o => o.j === fe.target).win, opts };
+    }
+    return { name:p.name, act, exp:+exp.toFixed(1), items, freeze };
+  });
+  // Across every fight that went the way the real one did, how far each side's crits ran from normal
+  const same = [], other = [];
+  for (let s = 1; s <= N; s++){
+    const q = E.simulate({ ...structuredClone(B), seed:s }), d = [0, 1].map(si => q.events.filter(e => e.kind === "roll" && e.si === si).reduce((a, e) => a + (e.crit ? 1 : 0) - e.p/100, 0));
+    (q.end.winner === B.winner ? same : other).push(d);
+  }
+  const avg = (a, i) => a.length ? +(a.reduce((x, d) => x + d[i], 0) / a.length).toFixed(1) : 0;
+  return { upset: (lost ? winP : 1 - winP) >= 0.65, sides, pop: { n: same.length, mine: avg(same, 0), theirs: avg(same, 1), otherMine: avg(other, 0), otherTheirs: avg(other, 1) } };
+}
+
+  const lost = B.winner === 1, nm = (it, si) => (it.ench ? it.ench + " " : "") + it.name;
+  const odds = E.whatIf(structuredClone(B), N);
+  const ladder = LAD.map(hp => { const D = structuredClone(B); D.sides[1].hp = hp; return { hp, win: E.whatIf(D, 1000).win }; });
+  const F = E.fitSeeds(structuredClone(B), 1000);
+  const seeds = F.runs.filter(r => r.win).slice(0, 40).map(r => r.seed);
+  const sim = (seed, spec) => { const D = structuredClone(B); D.ov = { ...(spec?.ov || {}) }; D.skillOff = {}; D.stunAt = spec?.stunAt; return E.simulate({ ...D, seed }); };
+  const margins = seeds.map(s => { const r = sim(s); return Math.round(Math.max(0, lost ? r.S[1].hp : r.S[0].hp)); }).sort((a, b) => a - b);
+  const sc = [];
+  B.sides.forEach((p, si) => p.items.forEach((it, ii) => {
+    const key = si + "_" + ii, mine = si === 0;
+    if (it.crit !== undefined && it.crit < 100 && (mine ? it.crit > 0 || lost : true)){
+      const want = mine === lost ? "always" : "never"; // help you when you lost, hurt you when you won
+      if (!(want === "never" && it.crit === 0 && mine)) sc.push({ label: `${mine ? "" : p.name + "'s "}${nm(it)} ${want === "always" ? "crits every time" : "never crits"}`, spec: { ov: { [key]: { crit: want } } } });
+    }
+    const HASTES = B.sides[si].items.some(x => x.haste), RAND = B.sides[si].items.some(x => x.haste && (x.haste.mode === "random" || x.haste.mode === "friendAndOther"));
+    if (it.cd > 0 && mine === lost && RAND) sc.push({ label: `${mine ? "" : p.name + "'s "}${nm(it)} gets every random haste`, spec: { ov: { [key]: { hasteMagnet: true } } } });
+    if (it.cd > 0 && mine !== lost && RAND) sc.push({ label: `${mine ? "" : p.name + "'s "}${nm(it)} misses every random haste`, spec: { ov: { [key]: { missRandHaste: true } } } });
+    if (it.cd > 0 && CONTROLS(B.sides[1 - si])){
+      // Same fight, same rolls; only which item the Stunning Strike freeze hits changes.
+      const by = 1 - si, k = B.sides[by].skills.findIndex(x => x.kind === "stun");
+      if (k >= 0 && mine !== lost) sc.push({ label: mine ? `${B.sides[1].name}'s freeze hits your ${nm(it)}` : `Your freeze hits ${nm(it)}`, spec: { stunAt: { [by]: ii } } });
+    }
+  }));
+  const flips = sc.map(s => { const won = seeds.filter(seed => sim(seed, s.spec).end.winner === (lost ? 0 : 1)); return { label: s.label, spec: s.spec, n: won.length, seed: won[0] }; })
+    .filter(x => x.n > 0).sort((a, b) => b.n - a.n).slice(0, 7);
+  // The fight closest to your recap, and the closest one that went the other way
+  const alt = F.runs.find(r => !r.win);
+  const luck = luckReport(B, F.runs[0].seed, odds.win);
+  return { luck, real: F.runs[0].seed, alt: alt ? alt.seed : null, win: odds.win, N, ladder, flips, of: seeds.length, margin: { min: margins[0], med: margins[Math.floor(margins.length/2)], max: margins[margins.length-1] } };
+}
+
+if (typeof module !== "undefined") module.exports = { simulate, fitSeeds, whatIf, summarize };
