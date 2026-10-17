@@ -41,5 +41,5 @@ let b='';z.forEach(c=>b+=String.fromCharCode(c));
 const d64=btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const run=(location.pathname.match(/runs\/([a-z0-9]+)/i)||[])[1]||'';
 const day=new URLSearchParams(location.search).get('day')||((document.body.innerText.match(/\bDay (\d+)\b/)||[])[1])||'';
-window.open('https://soapbottle.github.io/bazaarreplay/#run='+run+'&day='+day+'&d='+d64,'_blank');
+window.open('https://soapbottle.github.io/thatsbazaar/#run='+run+'&day='+day+'&d='+d64,'_blank');
 })();
