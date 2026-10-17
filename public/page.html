@@ -971,4 +971,15 @@ $("paste-build").onclick = () => {
   }, 30);
 };
 loadFight(0);
+// Opened by the Open in Replay bookmark: #run=<id>&day=<n>&d=<Board Reader text, deflated, base64url>
+async function fromLink(){
+  const h = new URLSearchParams(location.hash.slice(1)); if (!h.get("d")) return;
+  try {
+    const b = atob(h.get("d").replace(/-/g, "+").replace(/_/g, "/")), bytes = Uint8Array.from(b, c => c.charCodeAt(0));
+    const text = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+    $("find-run").value = `https://bazaarhub.gg/runs/${h.get("run") || ""}${h.get("day") ? "?day=" + h.get("day") : ""}`;
+    $("paste-text").value = text; $("paste-build").click();
+  } catch (err) { const m = $("find-msg"); m.hidden = false; m.textContent = "The bookmark's data didn't come through. Try clicking it again once the BazaarHub page has finished loading."; }
+}
+fromLink();
 </script>
