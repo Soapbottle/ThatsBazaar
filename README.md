@@ -25,7 +25,7 @@ Node 18 or newer, no dependencies.
 
 ## One-click: Open in Replay bookmark
 
-`docs/index.html` is the whole app in one file, served by GitHub Pages at https://soapbottle.github.io/thatsbazaar/. Make a bookmark whose address is the contents of `tools/open_in_replay_bookmarklet.txt`. On a BazaarHub run page, click it: it reads that day's fights in your browser and opens the replay site with them already built.
+`docs/index.html` is the whole app in one file, served by GitHub Pages at https://soapbottle.github.io/ThatsBazaar/. Make a bookmark whose address is the contents of `tools/open_in_replay_bookmarklet.txt`. On a BazaarHub run page, click it: it reads that day's fights in your browser and opens the replay site with them already built.
 
 ## Building a fight from a paste
 
