@@ -1027,16 +1027,19 @@ function parseDid(block, board){
     const raw = lines[i], em = raw.match(ENCH), bare = raw.replace(ENCH, "").trim();
     if (names.includes(bare.toLowerCase())){ cur = { name: bare, ench: em ? cap(em[1]) : undefined }; out.push(cur); continue; }
     if (!cur) continue;
-    // A number and its word may share a line ("Dealt 1,245 damage") or sit on neighbouring lines
-    const num = raw.match(/([\d][\d,]*)/);
-    const words = num ? raw : null;
-    const nearby = [raw, lines[i - 1] || "", lines[i + 1] || ""];
-    if (num){
-      const v = +num[1].replace(/,/g, "");
-      const key = (RECAP_KEYS.find(([, re]) => re.test(raw.replace(num[1], ""))) || RECAP_KEYS.find(([, re]) => re.test(nearby[1]) && !/\d/.test(nearby[1])) || RECAP_KEYS.find(([, re]) => re.test(nearby[2]) && !/\d/.test(nearby[2])) || [])[0];
+    // BazaarHub writes one sentence per item ("Slowed 14 items, dealt 55 damage and added 11 regen in 7 uses"),
+    // so each clause carries its own number and word; a bare number takes its word from a neighbouring line
+    const clauses = raw.split(/,\s+|\s+and\s+|\s+(?=in\s+[\d,]+\s+uses?\b)/i);
+    for (const c of clauses){
+      const num = c.match(/(\d[\d,]*)/);
+      if (!num) continue;
+      const v = +num[1].replace(/,/g, ""), rest = c.replace(num[1], "");
+      const key = (RECAP_KEYS.find(([, re]) => re.test(rest)) || (clauses.length === 1 && (RECAP_KEYS.find(([, re]) => re.test(lines[i - 1] || "") && !/\d/.test(lines[i - 1] || "")) || RECAP_KEYS.find(([, re]) => re.test(lines[i + 1] || "") && !/\d/.test(lines[i + 1] || "")))) || [])[0];
       if (key && cur[key] === undefined) cur[key] = v;
     }
   }
+  // An item that did something without "in N uses" went off once
+  out.forEach(d => { if (d.uses === undefined && Object.keys(d).some(k => k !== "name" && k !== "ench" && d[k] !== undefined)) d.uses = 1; });
   return out;
 }
 function parseReader(text, runId){
