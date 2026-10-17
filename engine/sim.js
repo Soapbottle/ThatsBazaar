@@ -228,7 +228,7 @@ function simulate(D){
   }
   S.forEach((s, si) => s.items.forEach((it, ii) => { const f = OV(si, ii).startFreeze; if (f){ it.freezeLeft = f; it.st.gotFreeze += f; } }));
   S.forEach((s, si) => s.items.forEach((it, ii) => (it.atStart || []).forEach(f => doEff(si, ii, f, 1))));
-  snap();
+  if (!D.fast) snap();
   while (t < D.maxT && !end){
     step++; t = R(step*dt);
     for (let si = 0; si < 2; si++){
@@ -258,7 +258,7 @@ function simulate(D){
       const sand = Math.min(1171, Math.round(2*Math.exp(0.67*(t - D.sandstormAt))));
       S.forEach((s, si) => hit(si, sand, "dmg"));
     }
-    snap();
+    if (!D.fast) snap();
     const dead = S.map(s => s.hp <= 0);
     if (dead[0] || dead[1]) end = { t, winner: dead[0] && dead[1] ? -1 : dead[1] ? 0 : 1 };
   }
@@ -278,7 +278,7 @@ function fitSeeds(D, N){
   D_REAL = D.sides.map(p => p.items.map(it => it.real));
   const runs = [];
   for (let seed = 1; seed <= N; seed++){
-    const r = simulate({ ...D, seed });
+    const r = simulate({ ...D, seed, fast:true });
     runs.push({ seed, score: scoreRun(r) + (r.end.winner === D.winner ? 0 : 1), win: r.end.winner === D.winner, t: r.end.t,
       stats: r.S.map(s => s.items.map(it => it.st)), skills: r.S.map(s => s.skills.map(k => k.st)) });
   }
@@ -302,7 +302,7 @@ function fitSeeds(D, N){
 function whatIf(D, N){
   let wins = 0, tSum = 0, hpSum = 0; const res = [];
   for (let seed = 1; seed <= N; seed++){
-    const r = simulate({ ...D, seed });
+    const r = simulate({ ...D, seed, fast:true });
     const w = r.end.winner === 0; if (w){ wins++; hpSum += Math.max(0, r.S[0].hp); }
     tSum += r.end.t; res.push({ seed, w, t: r.end.t });
   }
@@ -324,11 +324,14 @@ function luckReport(B, seed, winP){
     const items = [];
     p.items.forEach((it, ii) => {
       const rolls = r.events.filter(e => e.kind === "roll" && e.si === si && e.ii === ii);
-      if (!rolls.length) return;
+      // Items that never had a crit chance have no luck to report
+      if (!rolls.length || !rolls.some(e => e.p > 0)) return;
       const act = rolls.filter(e => e.crit).length, exp = rolls.reduce((a, e) => a + e.p/100, 0);
       // How much this item's crits move the fight: your win chance if it always vs never crits
       const D1 = structuredClone(B), D2 = structuredClone(B); D1.ov = { [si+"_"+ii]: { crit:"always" } }; D2.ov = { [si+"_"+ii]: { crit:"never" } };
-      const wAlways = W(D1), wNever = W(D2), weight = Math.abs(wAlways - wNever);
+      // Only the side's busiest critters are weighed; the rest barely move the fight
+      const top = p.items.map((x, j) => ({ j, e: r.events.filter(q => q.kind === "roll" && q.si === si && q.ii === j).reduce((a, q) => a + q.p/100, 0) })).sort((a, b) => b.e - a.e).slice(0, 4).map(x => x.j);
+      const weight = (exp < 0.3 && !act) || !top.includes(ii) ? 0 : Math.abs(E.whatIf(D1, 60).win - E.whatIf(D2, 60).win);
       // Longest miss streak at good odds and lucky crits at poor odds
       let run = 1, best = { n:0, p:1, at:0 }, cur = { n:0, p:1 };
       rolls.forEach(e => { if (!e.crit && e.p >= 50){ cur.n++; cur.p *= 1 - e.p/100; if (cur.p < best.p) best = { n:cur.n, p:cur.p, at:e.p }; } else cur = { n:0, p:1 }; });
@@ -347,7 +350,7 @@ function luckReport(B, seed, winP){
   // Across every fight that went the way the real one did, how far each side's crits ran from normal
   const same = [], other = [];
   for (let s = 1; s <= N; s++){
-    const q = E.simulate({ ...structuredClone(B), seed:s }), d = [0, 1].map(si => q.events.filter(e => e.kind === "roll" && e.si === si).reduce((a, e) => a + (e.crit ? 1 : 0) - e.p/100, 0));
+    const q = E.simulate({ ...B, seed:s, fast:true }), d = [0, 1].map(si => q.events.filter(e => e.kind === "roll" && e.si === si).reduce((a, e) => a + (e.crit ? 1 : 0) - e.p/100, 0));
     (q.end.winner === B.winner ? same : other).push(d);
   }
   const avg = (a, i) => a.length ? +(a.reduce((x, d) => x + d[i], 0) / a.length).toFixed(1) : 0;
@@ -359,7 +362,7 @@ function luckReport(B, seed, winP){
   const ladder = LAD.map(hp => { const D = structuredClone(B); D.sides[1].hp = hp; return { hp, win: E.whatIf(D, 1000).win }; });
   const F = E.fitSeeds(structuredClone(B), 1000);
   const seeds = F.runs.filter(r => r.win).slice(0, 40).map(r => r.seed);
-  const sim = (seed, spec) => { const D = structuredClone(B); D.ov = { ...(spec?.ov || {}) }; D.skillOff = {}; D.stunAt = spec?.stunAt; return E.simulate({ ...D, seed }); };
+  const sim = (seed, spec) => E.simulate({ ...B, ov:{ ...(spec?.ov || {}) }, skillOff:{}, stunAt:spec?.stunAt, seed, fast:true });
   const margins = seeds.map(s => { const r = sim(s); return Math.round(Math.max(0, lost ? r.S[1].hp : r.S[0].hp)); }).sort((a, b) => a - b);
   const sc = [];
   B.sides.forEach((p, si) => p.items.forEach((it, ii) => {

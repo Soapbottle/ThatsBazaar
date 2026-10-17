@@ -211,7 +211,7 @@ function genSkill(s){
 }
 // Times each item was used in one fight with nobody dying, so cooldowns can be fitted to the recap
 function useTimes(D, seed){
-  const r = simulate({ ...D, seed }), u = D.sides.map(p => p.items.map(() => []));
+  const r = simulate({ ...D, seed, fast:true }), u = D.sides.map(p => p.items.map(() => []));
   r.events.forEach(e => { if (e.kind === "use" && e.si >= 0 && e.ii >= 0) u[e.si][e.ii].push(e.t); });
   return { u, r };
 }
@@ -281,7 +281,7 @@ function fitGen(D, P){
   // BazaarHub's recap gives the totals. Scale each item's numbers so its totals by the real end match.
   const KS = ["dmg", "burn", "poison", "shield", "heal", "regen"];
   for (let pass = 0; pass < 4; pass++){
-    const runs = SEEDS.map(s => simulate({ ...F, seed: s, maxT: T }).S);
+    const runs = SEEDS.map(s => simulate({ ...F, seed: s, maxT: T, fast:true }).S);
     F.sides.forEach((p, si) => p.items.forEach((it, ii) => {
       if (!it.rules) return;
       KS.forEach(k => { const want = it.real[k]; if (!want) return;
@@ -291,7 +291,7 @@ function fitGen(D, P){
   }
   D.sides.forEach((p, si) => p.items.forEach((it, ii) => { if (F.sides[si].items[ii].scale) it.scale = F.sides[si].items[ii].scale; }));
   // Health lost by each side by the real end of the fight
-  const lost = [0, 1].map(si => { const v = SEEDS.map(s => { const r = simulate({ ...F, seed: s, maxT: T }); return 1e9 - r.S[si].hp; }).sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; });
+  const lost = [0, 1].map(si => { const v = SEEDS.map(s => { const r = simulate({ ...F, seed: s, maxT: T, fast:true }); return 1e9 - r.S[si].hp; }).sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; });
   D.sides.forEach((p, si) => p.items.forEach((it, ii) => { it.cd = F.sides[si].items[ii].cd; }));
   const L = D.winner === 0 ? 1 : 0, W = 1 - L;
   if (!P.sides[L].hp) D.sides[L].hp = Math.max(500, Math.round(lost[L] / 50) * 50);

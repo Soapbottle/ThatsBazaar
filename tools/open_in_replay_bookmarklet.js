@@ -1,4 +1,4 @@
-// Open in Replay: on a BazaarHub run page, reads every day's fights like the Board Reader and opens them in the replay site, on the day you're looking at.
+// Open in Replay: on a BazaarHub run page, reads the day on screen like the Board Reader and opens its fights in the replay site.
 (async()=>{
 // Open the tab now, while the click still counts, or the popup blocker stops it after the wait below
 const win=window.open('about:blank','_blank');
@@ -40,17 +40,8 @@ return out;
 };
 const T=['bronze','silver','gold','diamond','legendary'];
 const day=new URLSearchParams(location.search).get('day')||((document.body.innerText.match(/\bDay (\d+)\b/)||[])[1])||'';
-const last=Math.max(+day||0,...[...document.body.innerText.matchAll(/\bDay (\d+)\b/g)].map(m=>+m[1]));
-const say=t=>{try{if(win)win.document.body.textContent=t;}catch(e){}};
-// Every other day: fetch its page and lay it out off screen so it reads like the one on screen
-const box=document.createElement('div');box.style.cssText='position:absolute;left:-20000px;top:0;width:1400px';document.body.appendChild(box);
-const parts={};parts[day]=read(document.body,day);
-const days=[];for(let n=1;n<=last;n++)if(String(n)!==String(day))days.push(n);
-let done=0;
-const one=async n=>{try{const h=await(await fetch(location.pathname+'?day='+n,{credentials:'include'})).text();const el=document.createElement('div');el.innerHTML=new DOMParser().parseFromString(h,'text/html').body.innerHTML;box.appendChild(el);parts[n]=read(el,n);el.remove();}catch(e){parts[n]='';}say('Reading BazaarHub: day '+(++done)+' of '+days.length+'…');};
-for(let i=0;i<days.length;i+=4)await Promise.all(days.slice(i,i+4).map(one));
-box.remove();
-let out='';for(let n=1;n<=last;n++)out+=parts[n]||'';
+// Only the day on screen, so the replay opens fast
+const out=read(document.body,day);
 if(!out){if(win)win.close();alert('No fight boards found. Open a BazaarHub run page, wait until the boards finish loading, then click again.');return;}
 // Hand the text to the replay site in its link, deflated to keep the link short
 const raw=new TextEncoder().encode(out);

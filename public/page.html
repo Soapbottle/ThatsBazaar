@@ -162,6 +162,13 @@ td.num{font-family:var(--mono)}
 .ladder span.cur{border-color:var(--accent);color:var(--accent)}
 .flips{display:grid;gap:6px}
 .flips .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,180px) auto auto;gap:10px;align-items:center;font-size:13.5px}
+.doom{margin:4px 0 12px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);text-align:center;background:radial-gradient(ellipse at center,rgba(232,163,60,.16),transparent 70%),var(--panel-2)}
+.doom.lose{background:radial-gradient(ellipse at center,rgba(226,80,60,.2),transparent 70%),var(--panel-2)}
+.doom-h{font-family:var(--display,serif);font-size:30px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(90deg,#ffd27a,#e8a33c,#ffd27a);-webkit-background-clip:text;background-clip:text;color:transparent;animation:doom 2.4s ease-in-out infinite}
+.doom.lose .doom-h,.doom.odd .doom-h{background-image:linear-gradient(90deg,#ff8a70,#e2503c,#ff8a70)}
+.doom-d{font-size:13.5px;color:var(--muted);margin-top:4px}
+@keyframes doom{0%,100%{filter:drop-shadow(0 0 0 rgba(232,163,60,0))}50%{filter:drop-shadow(0 0 10px rgba(232,163,60,.6))}}
+@media (prefers-reduced-motion: reduce){.doom-h{animation:none}}
 .tile{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .tile .k{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .tile .v{font-family:var(--mono);font-size:24px;font-weight:600}
@@ -293,10 +300,12 @@ td.num{font-family:var(--mono)}
   </section>
 </div>
 
+<script id="engine">
+/*ENGINE*/
+</script>
 <script>
 const IMG = /*IMG*/{};
 const SKIMG = /*SKIMG*/{};
-/*ENGINE*/
 
 // ---------- Rendering ----------
 const $ = id => document.getElementById(id);
@@ -478,12 +487,16 @@ function fly(el, from, to, ms, arc){
   const a = el.animate([{ transform:"translate(0,0)" },{ transform:`translate(${mx-from.x}px,${my-from.y}px)`, offset:.5 },{ transform:`translate(${to.x-from.x}px,${to.y-from.y}px)` }], { duration: ms/Math.max(.5,speed), easing:"ease-in" });
   a.onfinish = () => el.remove(); return a;
 }
+// Numbers that land on the same spot at once stack into lanes instead of piling on top of each other
+const LANES = {};
 function floater(x, y, text, color, size){
-  const f = spawn("floater" + (size ? " " + size : ""), x, y, text); f.style.color = color;
-  f.animate([{ opacity:0, transform:"translate(-50%,-30%) scale(.7)" },{ opacity:1, transform:"translate(-50%,-60%) scale(1.15)", offset:.15 },{ opacity:0, transform:"translate(-50%,-180%) scale(1)" }], { duration:1100, easing:"ease-out" }).onfinish = () => f.remove();
+  const key = Math.round(x / 80) + "_" + Math.round(y / 40), now = performance.now(), L = LANES[key] = (LANES[key] && now - LANES[key].t < 500) ? { n: (LANES[key].n + 1) % 4, t: now } : { n: 0, t: now };
+  const f = spawn("floater" + (size ? " " + size : ""), x, y - L.n * 18, text); f.style.color = color;
+  f.animate([{ opacity:0, transform:"translate(-50%,-50%)" },{ opacity:1, transform:"translate(-50%,-70%)", offset:.12 },{ opacity:1, transform:"translate(-50%,-110%)", offset:.7 },{ opacity:0, transform:"translate(-50%,-150%)" }], { duration:1300, easing:"linear" }).onfinish = () => f.remove();
 }
 function ring(x, y, size, color, ms){ const r = spawn("ring", x, y); r.style.borderColor = color; r.animate([{ width:"10px", height:"10px", opacity:1 },{ width:size+"px", height:size+"px", opacity:0 }], { duration:ms||500, easing:"ease-out" }).onfinish = () => r.remove(); }
-function shake(el, px){ el.animate([{transform:"translate(0,0)"},{transform:`translate(${-px}px,${px/2}px)`},{transform:`translate(${px}px,${-px/2}px)`},{transform:"translate(0,0)"}], { duration:220 }); }
+// Hits flash the health bar instead of shaking it, so its numbers stay readable
+function shake(el, px){ el.animate([{ boxShadow:"0 0 0 0 rgba(255,80,60,0)" },{ boxShadow:`0 0 ${px*3}px ${px/2}px rgba(255,80,60,.75)` },{ boxShadow:"0 0 0 0 rgba(255,80,60,0)" }], { duration:260 }); }
 function fire(card, si){
   card.classList.add("fire"); setTimeout(() => card.classList.remove("fire"), 300);
   const dir = si === 0 ? -1 : 1;
@@ -632,7 +645,7 @@ function buildBench(){
 
 function rerun(keepTime, refit){
   VIEW = DATA; const wb = $("wibar"); if (wb) wb.hidden = true;
-  if (refit || !FIT){ FIT = fitSeeds(DATA, 300); DATA.seed = !refit && typeof SUMMARY !== "undefined" && SUMMARY[BASE.key] ? SUMMARY[BASE.key].real : FIT.best.seed; } // same replay the odds box reads
+  if (refit || !FIT){ FIT = fitSeeds(DATA, BASE.gen ? 100 : 300); DATA.seed = !refit && typeof SUMMARY !== "undefined" && SUMMARY[BASE.key] ? SUMMARY[BASE.key].real : FIT.best.seed; } // same replay the odds box reads
   SIM = simulate(DATA);
   buildSides(); buildCompare();
   simT = keepTime ? Math.min(simT, SIM.end.t) : 0;
@@ -750,9 +763,9 @@ function tile(k, base, now, fmtv, betterUp){
   return `<div class="tile"><div class="k">${k}</div><div class="v">${fmtv(now)}</div><div class="d">was ${fmtv(base)} · ${ds}</div></div>`;
 }
 function runWhatIf(){
-  const N = 200;
+  const N = BASE.gen ? 100 : 200;
   WI_BASE = whatIf(wiData(D => { D.ov = {}; D.skillOff = {}; D.stunAt = {}; }), N);
-  WI_RES = whatIf(wiData(), N);
+  WI_RES = wiLabel() ? whatIf(wiData(), N) : WI_BASE;
   const pc = v => Math.round(v*100) + "%", sec = v => v.toFixed(1) + "s", hp = v => fmt(v);
   const label = wiLabel();
   $("wi-res").innerHTML = (label ? `<div class="note-t" style="grid-column:1/-1"><b>What if:</b> ${label}</div>` : `<div class="note-t" style="grid-column:1/-1">No changes yet. These are the odds with normal luck.</div>`) +
@@ -809,6 +822,7 @@ $("wi-rank").onclick = rankLuck;
 // Odds summary at the top: precomputed from 1,000 fights per fight (SUMMARY, built by precompute.js).
 function renderOdds(){
   const S = SUMMARY[BASE.key], lost = BASE.winner === 1, opp = BASE.sides[1], pc = v => Math.round(v*100) + "%";
+  if (!S){ $("odds").innerHTML = `<h2>Your odds</h2><div class="note-t">Working out your odds from ${BASE.gen ? 100 : 200} versions of this fight…</div>`; return; }
   const est = opp.hpSrc === "est";
   const shown = S.flips.filter(f => DECIDES(f, S));
   const flips = shown.length
@@ -819,6 +833,11 @@ function renderOdds(){
       <h2>Your odds</h2>
       <div class="controls">${S.alt ? `<button class="primary" id="odds-alt">Watch a fight you ${lost ? "win" : "lose"}</button>` : ""}<button id="odds-real">Watch the real fight</button></div>
     </div>
+    ${S.win === 1 || S.win === 0 ? (() => { const sure = S.win === 1, odd = sure === lost;
+      const head = odd ? (lost ? "Impossible loss" : "Impossible win") : (sure ? "Impossible to lose" : "Impossible to win");
+      const line = odd ? `You ${lost ? "won" : "lost"} all ${fmt(S.N)} replays, yet the real fight went the other way. Something on a board isn't in the replay yet.`
+        : `You ${sure ? "won" : "lost"} all ${fmt(S.N)} of ${fmt(S.N)} fights. No luck changes this one.`;
+      return `<div class="doom ${sure ? "win" : "lose"}${odd ? " odd" : ""}"><div class="doom-h">${head}</div><div class="doom-d">${line}</div></div>`; })() : ""}
     <div class="wi-res">
       <div class="tile"><div class="k">Win</div><div class="v" style="color:var(--ok)">${pc(S.win)}</div><div class="d muted">of ${fmt(S.N)} fights with normal luck</div></div>
       <div class="tile"><div class="k">Loss</div><div class="v" style="color:var(--hp)">${pc(1 - S.win)}</div><div class="d muted">real result: ${lost ? "loss" : "win"}</div></div>
@@ -920,12 +939,31 @@ function loadFight(i){
   $("title").textContent = BASE.title; $("eyebrow").textContent = BASE.eyebrow; $("runlink").href = BASE.runUrl;
   drawFightTabs();
   // A fight built from a paste works out its odds the first time it opens
-  if (!SUMMARY[BASE.key]){ const h = BASE.sides[1].hp; SUMMARY[BASE.key] = summarize(structuredClone(BASE), [h, Math.round(h*1.15), Math.round(h*1.3), Math.round(h*1.5)], 200); }
+  // A fight built from BazaarHub works out its odds in the background, so the replay shows right away
+  if (!SUMMARY[BASE.key]) oddsLater(BASE);
   $("wi-rank-tab").innerHTML = ""; $("wi-rank-note").textContent = "Tries every single change on its own at the opponent health above, and ranks them by how much they move your win chance.";
   renderOdds(); buildBench(); buildEffects(); rerun(false); buildWhatIf(); runWhatIf();
   // Open on a mid-fight still so the page reads at rest; Play runs it from the start.
   simT = Math.min(SIM.end.t * 0.55, SIM.end.t); draw();
   openOnTopLuck();
+}
+// Odds run in a background worker built from the engine script; without workers they run here after the first paint
+let WORKER = null, WORKER_OK = true; const ODDS_WAIT = {};
+function oddsLater(B){
+  const key = B.key, h = B.sides[1].hp, LAD = [h, Math.round(h*1.15), Math.round(h*1.3), Math.round(h*1.5)], N = B.gen ? 100 : 200;
+  if (ODDS_WAIT[key]) return; ODDS_WAIT[key] = true;
+  const done = S => { delete ODDS_WAIT[key]; SUMMARY[key] = S; if (BASE.key !== key) return; renderOdds();
+    if (!playing){ rerun(false); simT = Math.min(SIM.end.t * 0.55, SIM.end.t); draw(); openOnTopLuck(); } };
+  try {
+    if (!WORKER && WORKER_OK){
+      const src = $("engine").textContent + "\nonmessage = e => postMessage({ key: e.data.key, S: summarize(e.data.B, e.data.LAD, e.data.N) });";
+      WORKER = new Worker(URL.createObjectURL(new Blob([src], { type:"text/javascript" })));
+      WORKER.onmessage = e => (WORKER.cbs[e.data.key] || (() => {}))(e.data.S); WORKER.cbs = {};
+      WORKER.onerror = () => { WORKER_OK = false; WORKER = null; Object.keys(ODDS_WAIT).forEach(k => delete ODDS_WAIT[k]); oddsLater(BASE); };
+    }
+    if (WORKER){ WORKER.cbs[key] = done; WORKER.postMessage({ key, B: JSON.parse(JSON.stringify(B)), LAD, N }); return; }
+  } catch (err){ WORKER_OK = false; WORKER = null; }
+  setTimeout(() => done(summarize(structuredClone(B), LAD, N)), 60);
 }
 // Search: open a fight by run link and day. Fights not built yet are listed for Claude to add.
 async function fetchFight(run, day){
